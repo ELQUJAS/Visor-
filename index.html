@@ -56,17 +56,17 @@
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
         function removeEmptyRowsFromPopupContent(content, feature) {
-         var tempDiv = document.createElement('div');
-         tempDiv.innerHTML = content;
-         var rows = tempDiv.querySelectorAll('tr');
-         for (var i = 0; i < rows.length; i++) {
-             var td = rows[i].querySelector('td.visible-with-data');
-             var key = td ? td.id : '';
-             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
-                 rows[i].parentNode.removeChild(rows[i]);
-             }
-         }
-         return tempDiv.innerHTML;
+           var tempDiv = document.createElement('div');
+           tempDiv.innerHTML = content;
+           var rows = tempDiv.querySelectorAll('tr');
+           for (var i = 0; i < rows.length; i++) {
+               var td = rows[i].querySelector('td.visible-with-data');
+               var key = td ? td.id : '';
+               if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                   rows[i].parentNode.removeChild(rows[i]);
+               }
+           }
+           return tempDiv.innerHTML;
         }
         document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
           var tagName = event.target.tagName,
@@ -117,15 +117,15 @@
             });
             var popupContent = '<table>\
                     <tr>\
-                        <th scope="row">Categorias</th>\
+                        <th scope="row">Categorias:</th>\
                         <td>' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
-                        <th scope="row">Descrip.</th>\
+                        <th scope="row">Descrip.:</th>\
                         <td>' + (feature.properties['Descrip.'] !== null ? autolinker.link(feature.properties['Descrip.'].toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
-                        <th scope="row">Academicos</th>\
+                        <th scope="row">Academicos:</th>\
                         <td>' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
@@ -181,7 +181,7 @@
             hideMarkerOnCollapse: true,
             propertyName: 'Categorias'}));
         document.getElementsByClassName('search-button')[0].className +=
-         ' fa fa-binoculars';
+          ' fa fa-binoculars';
         </script>
     </body>
 </html>
