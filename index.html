@@ -118,8 +118,10 @@
 
             let descripcionTexto = feature.properties['Descrip.'] !== null ? feature.properties['Descrip.'].toLocaleString() : '';
 
-            // Define el texto original exacto que quieres reemplazar
-            const textoOriginal = 'Operativo Veterinario de mascotas c. Vacunación: A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas.';
+            // Definimos una PARTE CLAVE del texto original que buscará
+            // Esto es más flexible y se activará si el texto del GeoJSON contiene esta subcadena.
+            // ¡Asegúrate de que esta frase sea *exacta* a cómo aparece en tu archivo temp4_2.js!
+            const parteClaveTextoOriginal = 'Operativo Veterinario de mascotas c. Vacunación:';
 
             // Define el nuevo texto que quieres mostrar
             const nuevoTexto = 'Operativo Veterinario de mascotas\
@@ -128,8 +130,8 @@ c. Vacunación:\
 \
 A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019..';
 
-            // Realiza el reemplazo si el texto original coincide
-            if (descripcionTexto === textoOriginal) {
+            // Realiza el reemplazo si el texto original CONTIENE la parte clave
+            if (descripcionTexto.includes(parteClaveTextoOriginal)) {
                 descripcionTexto = nuevoTexto;
             }
 
