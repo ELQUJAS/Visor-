@@ -137,7 +137,7 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
 
             var popupContent = '<table>\
                     <tr>\
-                        <th scope="row">Categorias:</th>\
+                        <th scope="row">Categorías:</th>\
                         <td>' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
@@ -199,7 +199,7 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
             layer: layer_temp4_2,
             initial: false,
             hideMarkerOnCollapse: true,
-            propertyName: 'Categorias'}));
+            propertyName: 'Categorias'})); // Nota: Aquí la búsqueda sigue siendo por 'Categorias' (sin tilde), ya que es el nombre de la propiedad en tus datos.
         document.getElementsByClassName('search-button')[0].className +=
           ' fa fa-binoculars';
         </script>
