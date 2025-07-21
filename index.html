@@ -16,6 +16,11 @@
             padding: 0;
             margin: 0;
         }
+        /* Opcional: Estilo para resaltar las celdas editables */
+        td[contenteditable="true"]:focus {
+            outline: 1px solid #007bff;
+            background-color: #f0f8ff;
+        }
         </style>
         <title></title>
     </head>
@@ -135,21 +140,39 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
                 descripcionTexto = nuevoTexto;
             }
 
+            // AHORA LAS CELDAS SON EDITABLES
             var popupContent = '<table>\
                     <tr>\
                         <th scope="row">Categorías:</th>\
-                        <td>' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
+                        <td contenteditable="true" data-property="Categorias">' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
                         <th scope="row">Descripción:</th>\
-                        <td>' + autolinker.link(descripcionTexto) + '</td>\
+                        <td contenteditable="true" data-property="Descrip.">' + autolinker.link(descripcionTexto) + '</td>\
                     </tr>\
                     <tr>\
                         <th scope="row">Academicos:</th>\
-                        <td>' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
+                        <td contenteditable="true" data-property="Academicos">' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
                     </tr>\
                 </table>';
+
             layer.bindPopup(popupContent, {maxHeight: 400});
+
+            // Agrega un evento al cierre del popup para "guardar" los cambios temporalmente
+            layer.on('popupclose', function() {
+                var popupDiv = layer.getPopup().getElement();
+                if (popupDiv) {
+                    var editableCells = popupDiv.querySelectorAll('td[contenteditable="true"]');
+                    editableCells.forEach(function(cell) {
+                        var propertyName = cell.dataset.property; // Obtiene el nombre de la propiedad del atributo data-property
+                        if (propertyName && feature.properties[propertyName] !== undefined) {
+                            // Actualiza la propiedad del feature en memoria con el nuevo texto de la celda
+                            feature.properties[propertyName] = cell.innerText;
+                        }
+                    });
+                }
+            });
+
             var popup = layer.getPopup();
             var content = popup.getContent();
             var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
@@ -173,8 +196,8 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
             }
         }
         map.createPane('pane_temp4_2');
-        map.getPane('pane_temp4_2').style.zIndex = 402;
-        map.getPane('pane_temp4_2').style['mix-blend-mode'] = 'normal';
+        map.getPane('pane_temp_4_2').style.zIndex = 402;
+        map.getPane('pane_temp_4_2').style['mix-blend-mode'] = 'normal';
         var layer_temp4_2 = new L.geoJson(json_temp4_2, {
             attribution: '',
             interactive: true,
