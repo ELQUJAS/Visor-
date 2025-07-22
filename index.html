@@ -16,11 +16,11 @@
             padding: 0;
             margin: 0;
         }
-        /* Opcional: Estilo para resaltar las celdas editables */
-        td[contenteditable="true"]:focus {
+        /* Opcional: Estilo para resaltar las celdas editables - Ya no es necesario si se eliminó la edición */
+        /* td[contenteditable="true"]:focus {
             outline: 1px solid #007bff;
             background-color: #f0f8ff;
-        }
+        } */
         </style>
         <title></title>
     </head>
@@ -136,45 +136,33 @@
 \
 c. Vacunación:\
 \
-A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.'; // He quitado el punto extra al final de "2019.."
+A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
 
             // Realiza el reemplazo si el texto de la descripción del GeoJSON contiene la parte clave
             if (descripcionTexto.includes(parteClaveTextoOriginal)) {
                 descripcionTexto = nuevoTexto;
             }
 
-            // AHORA LAS CELDAS SON EDITABLES
+            // Las celdas ya NO son editables
             var popupContent = '<table>\
-                    <tr>\
-                        <th scope="row">Categorías:</th>\
-                        <td contenteditable="true" data-property="Categorias">' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">Descripción:</th>\
-                        <td contenteditable="true" data-property="Descrip.">' + autolinker.link(descripcionTexto) + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">Academicos:</th>\
-                        <td contenteditable="true" data-property="Academicos">' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
+                        <tr>\
+                            <th scope="row">Categorías:</th>\
+                            <td data-property="Categorias">' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
+                        </tr>\
+                        <tr>\
+                            <th scope="row">Descripción:</th>\
+                            <td data-property="Descrip.">' + autolinker.link(descripcionTexto) + '</td>\
+                        </tr>\
+                        <tr>\
+                            <th scope="row">Academicos:</th>\
+                            <td data-property="Academicos">' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
+                        </tr>\
+                    </table>';
 
             layer.bindPopup(popupContent, {maxHeight: 400});
 
-            // Agrega un evento al cierre del popup para "guardar" los cambios temporalmente
-            layer.on('popupclose', function() {
-                var popupDiv = layer.getPopup().getElement();
-                if (popupDiv) {
-                    var editableCells = popupDiv.querySelectorAll('td[contenteditable="true"]');
-                    editableCells.forEach(function(cell) {
-                        var propertyName = cell.dataset.property; // Obtiene el nombre de la propiedad del atributo data-property
-                        if (propertyName && feature.properties[propertyName] !== undefined) {
-                            // Actualiza la propiedad del feature en memoria con el nuevo texto de la celda
-                            feature.properties[propertyName] = cell.innerText;
-                        }
-                    });
-                }
-            });
+            // Se han eliminado los bloques de código JavaScript que manejaban el guardado de ediciones.
+            // Por lo tanto, no hay listeners para 'popupclose' o 'popupopen' con lógica de guardado.
 
             var popup = layer.getPopup();
             var content = popup.getContent();
