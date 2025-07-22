@@ -16,7 +16,7 @@
             padding: 0;
             margin: 0;
         }
-        /* Estilo para el contenedor de coordenadas */
+        /* Style for the coordinate display control */
         .leaflet-control-coordinates {
             background: rgba(255, 255, 255, 0.8);
             padding: 5px;
@@ -25,7 +25,8 @@
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 250px; /* Ajusta esto según necesites */
+            min-width: 250px; /* Adjust as needed */
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Optional: add a subtle shadow */
         }
         .leaflet-control-coordinates div {
             margin-bottom: 2px;
@@ -133,27 +134,19 @@
 
             let descripcionTexto = feature.properties['Descrip.'] !== null ? feature.properties['Descrip.'].toLocaleString() : '';
 
-            // ¡¡¡PASO CRÍTICO!!!
-            // Abre tu archivo `data/temp4_2.js` en un editor de texto.
-            // Busca la descripción ORIGINAL que quieres reemplazar (la que empieza con "Operativo Veterinario de mascotas c. Vacunación: A partir...").
-            // COPIA UNA PARTE DE ESE TEXTO QUE SEA ÚNICA Y EXACTA, INCLUYENDO ESPACIOS Y PUNTUACIÓN.
-            // PEGA ESA PARTE COPIADA AQUÍ ABAJO, DENTRO DE LAS COMILLAS SIMPLES.
-            // Ejemplo: 'Operativo Veterinario de mascotas c. Vacunación:'
+            // This is the custom text replacement logic
             const parteClaveTextoOriginal = 'Operativo Veterinario de mascotas c. Vacunación: A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas.';
-
-            // Define el nuevo texto que quieres mostrar
             const nuevoTexto = 'Operativo Veterinario de mascotas\
 \
 c. Vacunación:\
 \
 A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
 
-            // Realiza el reemplazo si el texto de la descripción del GeoJSON contiene la parte clave
             if (descripcionTexto.includes(parteClaveTextoOriginal)) {
                 descripcionTexto = nuevoTexto;
             }
 
-            // Las celdas ya NO son editables
+            // Popup content (no longer editable)
             var popupContent = '<table>\
                         <tr>\
                             <th scope="row">Categorías:</th>\
@@ -170,9 +163,6 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
                     </table>';
 
             layer.bindPopup(popupContent, {maxHeight: 400});
-
-            // Se han eliminado los bloques de código JavaScript que manejaban el guardado de ediciones.
-            // Por lo tanto, no hay listeners para 'popupclose' o 'popupopen' con lógica de guardado.
 
             var popup = layer.getPopup();
             var content = popup.getContent();
@@ -223,56 +213,61 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
             layer: layer_temp4_2,
             initial: false,
             hideMarkerOnCollapse: true,
-            propertyName: 'Categorias'})); // La búsqueda usa el nombre de la propiedad en tus datos, sin tilde si así está.
+            propertyName: 'Categorias'})); // The search uses the property name in your data
         document.getElementsByClassName('search-button')[0].className +=
           ' fa fa-binoculars';
 
-        // --- INICIO: NUEVA FUNCIONALIDAD DE VISUALIZADOR DE COORDENADAS ---
+        // --- START: REAL-TIME COORDINATE VIEWER FUNCTIONALITY ---
 
-        // 1. Crear un control personalizado de Leaflet para mostrar las coordenadas
+        // 1. Create a custom Leaflet control to display coordinates
         L.Control.Coordinates = L.Control.extend({
             onAdd: function(map) {
                 this._div = L.DomUtil.create('div', 'leaflet-control-coordinates');
+                // Initial display text
                 this._div.innerHTML = '<div>Lat/Lon:</div><div>UTM:</div>';
                 return this._div;
             },
 
             onRemove: function(map) {
-                // Nada que hacer aquí
+                // Nothing specific to do on removal for this control
             },
 
+            // Method to update the displayed coordinates
             updateCoordinates: function(lat, lng) {
                 const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
 
-                // Para UTM, necesitarás una librería. Asumimos 'utm-latlng.js' cargada.
-                // Zona UTM de Chile central suele ser 19S (o 18S más al norte, 20S más al sur).
+                // Ensure UTMConverter is available from utm-latlng.js
+                // If you encounter 'UTMConverter is not defined', double-check utm-latlng.js path and content
                 const utmConv = new UTMConverter();
                 const utm = utmConv.latLonToUtm(lat, lng);
 
                 let utmText = '';
                 if (utm) {
+                    // Format UTM coordinates
                     utmText = `UTM: ${utm.easting.toFixed(2)}E, ${utm.northing.toFixed(2)}N, Z${utm.zone}${utm.hemisphere}`;
                 } else {
-                    utmText = `UTM: N/A`; // En caso de que la conversión falle
+                    utmText = `UTM: N/A`; // Fallback if conversion fails
                 }
 
+                // Update the control's inner HTML
                 this._div.innerHTML = `<div>Lat/Lon: ${latLonText}</div><div>${utmText}</div>`;
             }
         });
 
+        // Factory function for easy control creation
         L.control.coordinates = function(opts) {
             return new L.Control.Coordinates(opts);
         }
 
-        // 2. Añadir el control al mapa en la esquina inferior izquierda
+        // 2. Add the coordinate control to the map at the bottom-left position
         const coordControl = L.control.coordinates({ position: 'bottomleft' }).addTo(map);
 
-        // 3. Actualizar las coordenadas en tiempo real al mover el ratón
+        // 3. Update coordinates in real-time as the mouse moves over the map
         map.on('mousemove', function(e) {
             coordControl.updateCoordinates(e.latlng.lat, e.latlng.lng);
         });
 
-        // --- FIN: NUEVA FUNCIONALIDAD DE VISUALIZADOR DE COORDENADAS ---
+        // --- END: REAL-TIME COORDINATE VIEWER FUNCTIONALITY ---
         </script>
     </body>
 </html>
