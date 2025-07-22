@@ -17,17 +17,19 @@
             margin: 0;
         }
         /* Style for the coordinate display control */
-        .leaflet-control-latlon-coordinates {
+        .leaflet-control-coordinates { /* Renamed for consistency */
             background: rgba(255, 255, 255, 0.8);
-            padding: 5px 8px; /* Slightly more padding */
+            padding: 5px 8px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 160px; /* Adjust as needed */
-            box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Optional: add a subtle shadow */
-            white-space: nowrap; /* Keep text on one line */
+            min-width: 250px; /* Wider to accommodate UTM */
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+        }
+        .leaflet-control-coordinates div {
+            margin-bottom: 2px;
         }
         </style>
         <title></title>
@@ -45,6 +47,7 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet-search.js"></script>
+        <script src="js/utm-latlng.js"></script>
         <script src="data/temp4_2.js"></script>
         <script>
         var highlightLayer;
@@ -214,13 +217,13 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
         document.getElementsByClassName('search-button')[0].className +=
           ' fa fa-binoculars';
 
-        // --- START: Real-time Lat/Lon Coordinate Viewer ---
+        // --- START: Real-time Lat/Lon and UTM (Zone 18S) Coordinate Viewer ---
 
         // 1. Create a custom Leaflet control
-        L.Control.LatLonCoordinates = L.Control.extend({
+        L.Control.CoordinatesViewer = L.Control.extend({
             onAdd: function(map) {
-                this._div = L.DomUtil.create('div', 'leaflet-control-latlon-coordinates');
-                this._div.innerHTML = 'Lat: --.--, Lon: --.--'; // Initial display
+                this._div = L.DomUtil.create('div', 'leaflet-control-coordinates');
+                this._div.innerHTML = '<div>Lat/Lon: --.--</div><div>UTM (18S): --.--</div>'; // Initial display
                 return this._div;
             },
 
@@ -231,24 +234,38 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
             // Method to update the displayed coordinates
             updateCoordinates: function(lat, lng) {
                 const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
-                this._div.innerHTML = latLonText;
+
+                // UTM conversion for Zone 18S
+                // Ensure UTMConverter is available from utm-latlng.js
+                // This explicitly sets Zone 18 and Hemisphere 'S' (South) for Chile's central/southern region
+                const utmConv = new UTMConverter();
+                const utm = utmConv.latLonToUtm(lat, lng, 18, 'S');
+
+                let utmText = '';
+                if (utm) {
+                    utmText = `E: ${utm.easting.toFixed(2)}, N: ${utm.northing.toFixed(2)}`;
+                } else {
+                    utmText = `N/A`; // Fallback if conversion fails (e.g., outside the specified zone)
+                }
+
+                this._div.innerHTML = `<div>Lat/Lon: ${latLonText}</div><div>UTM (18S): ${utmText}</div>`;
             }
         });
 
         // Factory function for easy control creation
-        L.control.latLonCoordinates = function(opts) {
-            return new L.Control.LatLonCoordinates(opts);
+        L.control.coordinatesViewer = function(opts) {
+            return new L.Control.CoordinatesViewer(opts);
         }
 
         // 2. Add the coordinate control to the map at the bottom-left position
-        const latLonControl = L.control.latLonCoordinates({ position: 'bottomleft' }).addTo(map);
+        const coordViewer = L.control.coordinatesViewer({ position: 'bottomleft' }).addTo(map);
 
         // 3. Update coordinates in real-time as the mouse moves over the map
         map.on('mousemove', function(e) {
-            latLonControl.updateCoordinates(e.latlng.lat, e.latlng.lng); // Correctly passing lat and lng
+            coordViewer.updateCoordinates(e.latlng.lat, e.latlng.lng);
         });
 
-        // --- END: Real-time Lat/Lon Coordinate Viewer ---
+        // --- END: Real-time Lat/Lon and UTM (Zone 18S) Coordinate Viewer ---
         </script>
     </body>
 </html>
