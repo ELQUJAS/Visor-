@@ -282,7 +282,7 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
         // --- END: Real-time Lat/Lon Coordinate Viewer ---
 
 
-        // --- START: Lat/Lon Coordinate Searcher (with 6 decimals) ---
+        // --- START: Lat/Lon Coordinate Searcher (with 6 decimals and marker removal on popup close) ---
         let searchMarker; // To store the marker placed by the search
 
         L.Control.CoordSearch = L.Control.extend({
@@ -310,6 +310,7 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
                     var lat = parseFloat(latInput.value);
                     var lon = parseFloat(lonInput.value);
 
+                    // Validate inputs: check if they are valid numbers and within range
                     if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
                         alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
                         return;
@@ -327,6 +328,13 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
                     searchMarker = L.marker(newLatLng).addTo(map)
                         .bindPopup(`<b>Coordenadas buscadas:</b><br>Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`)
                         .openPopup();
+
+                    // Add an event listener to the marker's popup close event
+                    // When the popup is closed, remove the marker from the map
+                    searchMarker.on('popupclose', function() {
+                        map.removeLayer(searchMarker);
+                        searchMarker = null; // Clear the reference
+                    });
                 };
 
                 return container;
