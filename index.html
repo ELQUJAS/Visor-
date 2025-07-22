@@ -19,15 +19,15 @@
         /* Style for the coordinate display control */
         .leaflet-control-latlon-coordinates {
             background: rgba(255, 255, 255, 0.8);
-            padding: 5px 8px;
+            padding: 5px 8px; /* Slightly more padding */
             border-radius: 4px;
             font-family: monospace;
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 160px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            white-space: nowrap;
+            min-width: 160px; /* Adjust as needed */
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Optional: add a subtle shadow */
+            white-space: nowrap; /* Keep text on one line */
         }
 
         /* Style for the coordinate search control */
@@ -42,7 +42,7 @@
             line-height: 1.5;
         }
         .leaflet-control-coord-search input {
-            width: 80px;
+            width: 90px; /* Slightly wider to accommodate 6 decimals */
             margin-right: 5px;
             border: 1px solid #ccc;
             padding: 3px;
@@ -98,7 +98,7 @@
         }
         var map = L.map('map', {
             zoomControl:true, maxZoom:28, minZoom:1
-        }).fitBounds([[-42.65361211415855,-86.67829211415855],[-26.24182117346426,-55.74136867070552]]);
+        }).fitBounds([[-42.65361211415855,-86.67829204370794],[-26.24182117346426,-55.74136867070552]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -282,7 +282,7 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
         // --- END: Real-time Lat/Lon Coordinate Viewer ---
 
 
-        // --- START: Lat/Lon Coordinate Searcher ---
+        // --- START: Lat/Lon Coordinate Searcher (with 6 decimals) ---
         let searchMarker; // To store the marker placed by the search
 
         L.Control.CoordSearch = L.Control.extend({
@@ -293,11 +293,11 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
                 container.innerHTML = `
                     <div>
                         <label for="latInput">Lat:</label>
-                        <input type="number" id="latInput" placeholder="-33.45" step="any">
+                        <input type="number" id="latInput" placeholder="-33.456789" step="0.000001">
                     </div>
                     <div>
                         <label for="lonInput">Lon:</label>
-                        <input type="number" id="lonInput" placeholder="-70.66" step="any">
+                        <input type="number" id="lonInput" placeholder="-70.665432" step="0.000001">
                     </div>
                     <button id="searchCoordBtn">Buscar</button>
                 `;
@@ -316,7 +316,7 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
                     }
 
                     var newLatLng = L.latLng(lat, lon);
-                    map.setView(newLatLng, 15); // Pan and zoom to the new location
+                    map.setView(newLatLng, 15); // Pan and zoom to the new location (you can adjust zoom level)
 
                     // Remove existing marker if any
                     if (searchMarker) {
