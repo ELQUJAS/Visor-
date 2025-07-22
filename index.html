@@ -16,11 +16,20 @@
             padding: 0;
             margin: 0;
         }
-        /* Opcional: Estilo para resaltar las celdas editables - Ya no es necesario si se eliminó la edición */
-        /* td[contenteditable="true"]:focus {
-            outline: 1px solid #007bff;
-            background-color: #f0f8ff;
-        } */
+        /* Estilo para el contenedor de coordenadas */
+        .leaflet-control-coordinates {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+            min-width: 250px; /* Ajusta esto según necesites */
+        }
+        .leaflet-control-coordinates div {
+            margin-bottom: 2px;
+        }
         </style>
         <title></title>
     </head>
@@ -37,6 +46,7 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet-search.js"></script>
+        <script src="js/utm-latlng.js"></script>
         <script src="data/temp4_2.js"></script>
         <script>
         var highlightLayer;
@@ -216,6 +226,53 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
             propertyName: 'Categorias'})); // La búsqueda usa el nombre de la propiedad en tus datos, sin tilde si así está.
         document.getElementsByClassName('search-button')[0].className +=
           ' fa fa-binoculars';
+
+        // --- INICIO: NUEVA FUNCIONALIDAD DE VISUALIZADOR DE COORDENADAS ---
+
+        // 1. Crear un control personalizado de Leaflet para mostrar las coordenadas
+        L.Control.Coordinates = L.Control.extend({
+            onAdd: function(map) {
+                this._div = L.DomUtil.create('div', 'leaflet-control-coordinates');
+                this._div.innerHTML = '<div>Lat/Lon:</div><div>UTM:</div>';
+                return this._div;
+            },
+
+            onRemove: function(map) {
+                // Nada que hacer aquí
+            },
+
+            updateCoordinates: function(lat, lng) {
+                const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
+
+                // Para UTM, necesitarás una librería. Asumimos 'utm-latlng.js' cargada.
+                // Zona UTM de Chile central suele ser 19S (o 18S más al norte, 20S más al sur).
+                const utmConv = new UTMConverter();
+                const utm = utmConv.latLonToUtm(lat, lng);
+
+                let utmText = '';
+                if (utm) {
+                    utmText = `UTM: ${utm.easting.toFixed(2)}E, ${utm.northing.toFixed(2)}N, Z${utm.zone}${utm.hemisphere}`;
+                } else {
+                    utmText = `UTM: N/A`; // En caso de que la conversión falle
+                }
+
+                this._div.innerHTML = `<div>Lat/Lon: ${latLonText}</div><div>${utmText}</div>`;
+            }
+        });
+
+        L.control.coordinates = function(opts) {
+            return new L.Control.Coordinates(opts);
+        }
+
+        // 2. Añadir el control al mapa en la esquina inferior izquierda
+        const coordControl = L.control.coordinates({ position: 'bottomleft' }).addTo(map);
+
+        // 3. Actualizar las coordenadas en tiempo real al mover el ratón
+        map.on('mousemove', function(e) {
+            coordControl.updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+
+        // --- FIN: NUEVA FUNCIONALIDAD DE VISUALIZADOR DE COORDENADAS ---
         </script>
     </body>
 </html>
