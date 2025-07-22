@@ -17,19 +17,17 @@
             margin: 0;
         }
         /* Style for the coordinate display control */
-        .leaflet-control-coordinates {
+        .leaflet-control-latlon-coordinates {
             background: rgba(255, 255, 255, 0.8);
-            padding: 5px;
+            padding: 5px 8px; /* Slightly more padding */
             border-radius: 4px;
             font-family: monospace;
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 250px; /* Adjust as needed */
+            min-width: 160px; /* Adjust as needed */
             box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Optional: add a subtle shadow */
-        }
-        .leaflet-control-coordinates div {
-            margin-bottom: 2px;
+            white-space: nowrap; /* Keep text on one line */
         }
         </style>
         <title></title>
@@ -47,7 +45,6 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet-search.js"></script>
-        <script src="js/utm-latlng.js"></script>
         <script src="data/temp4_2.js"></script>
         <script>
         var highlightLayer;
@@ -213,61 +210,45 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
             layer: layer_temp4_2,
             initial: false,
             hideMarkerOnCollapse: true,
-            propertyName: 'Categorias'})); // The search uses the property name in your data
+            propertyName: 'Categorias'}));
         document.getElementsByClassName('search-button')[0].className +=
           ' fa fa-binoculars';
 
-        // --- START: REAL-TIME COORDINATE VIEWER FUNCTIONALITY ---
+        // --- START: Real-time Lat/Lon Coordinate Viewer ---
 
-        // 1. Create a custom Leaflet control to display coordinates
-        L.Control.Coordinates = L.Control.extend({
+        // 1. Create a custom Leaflet control
+        L.Control.LatLonCoordinates = L.Control.extend({
             onAdd: function(map) {
-                this._div = L.DomUtil.create('div', 'leaflet-control-coordinates');
-                // Initial display text
-                this._div.innerHTML = '<div>Lat/Lon:</div><div>UTM:</div>';
+                this._div = L.DomUtil.create('div', 'leaflet-control-latlon-coordinates');
+                this._div.innerHTML = 'Lat: --.--, Lon: --.--'; // Initial display
                 return this._div;
             },
 
             onRemove: function(map) {
-                // Nothing specific to do on removal for this control
+                // Nothing specific to do on removal
             },
 
             // Method to update the displayed coordinates
             updateCoordinates: function(lat, lng) {
                 const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
-
-                // Ensure UTMConverter is available from utm-latlng.js
-                // If you encounter 'UTMConverter is not defined', double-check utm-latlng.js path and content
-                const utmConv = new UTMConverter();
-                const utm = utmConv.latLonToUtm(lat, lng);
-
-                let utmText = '';
-                if (utm) {
-                    // Format UTM coordinates
-                    utmText = `UTM: ${utm.easting.toFixed(2)}E, ${utm.northing.toFixed(2)}N, Z${utm.zone}${utm.hemisphere}`;
-                } else {
-                    utmText = `UTM: N/A`; // Fallback if conversion fails
-                }
-
-                // Update the control's inner HTML
-                this._div.innerHTML = `<div>Lat/Lon: ${latLonText}</div><div>${utmText}</div>`;
+                this._div.innerHTML = latLonText;
             }
         });
 
         // Factory function for easy control creation
-        L.control.coordinates = function(opts) {
-            return new L.Control.Coordinates(opts);
+        L.control.latLonCoordinates = function(opts) {
+            return new L.Control.LatLonCoordinates(opts);
         }
 
         // 2. Add the coordinate control to the map at the bottom-left position
-        const coordControl = L.control.coordinates({ position: 'bottomleft' }).addTo(map);
+        const latLonControl = L.control.latLonCoordinates({ position: 'bottomleft' }).addTo(map);
 
         // 3. Update coordinates in real-time as the mouse moves over the map
         map.on('mousemove', function(e) {
-            coordControl.updateCoordinates(e.latlng.lat, e.latlng.lng);
+            latLonControl.updateCoordinates(e.latlng.lat, e.latlng.lng); // Correctly passing lat and lng
         });
 
-        // --- END: REAL-TIME COORDINATE VIEWER FUNCTIONALITY ---
+        // --- END: Real-time Lat/Lon Coordinate Viewer ---
         </script>
     </body>
 </html>
