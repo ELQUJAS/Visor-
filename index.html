@@ -19,15 +19,49 @@
         /* Style for the coordinate display control */
         .leaflet-control-latlon-coordinates {
             background: rgba(255, 255, 255, 0.8);
-            padding: 5px 8px; /* Slightly more padding */
+            padding: 5px 8px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 160px; /* Adjust as needed */
-            box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Optional: add a subtle shadow */
-            white-space: nowrap; /* Keep text on one line */
+            min-width: 160px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            white-space: nowrap;
+        }
+
+        /* Style for the coordinate search control */
+        .leaflet-control-coord-search {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: sans-serif;
+            font-size: 13px;
+            color: #333;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            line-height: 1.5;
+        }
+        .leaflet-control-coord-search input {
+            width: 80px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            padding: 3px;
+            border-radius: 3px;
+        }
+        .leaflet-control-coord-search button {
+            padding: 3px 8px;
+            border: 1px solid #0078A8;
+            background-color: #0078A8;
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .leaflet-control-coord-search button:hover {
+            background-color: #005f8a;
+        }
+        .leaflet-control-coord-search label {
+            display: inline-block;
+            width: 30px; /* Align labels */
         }
         </style>
         <title></title>
@@ -64,7 +98,7 @@
         }
         var map = L.map('map', {
             zoomControl:true, maxZoom:28, minZoom:1
-        }).fitBounds([[-42.65361211415855,-86.67829204370794],[-26.24182117346426,-55.74136867070552]]);
+        }).fitBounds([[-42.65361211415855,-86.67829211415855],[-26.24182117346426,-55.74136867070552]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -216,39 +250,98 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
 
         // --- START: Real-time Lat/Lon Coordinate Viewer ---
 
-        // 1. Create a custom Leaflet control
+        // 1. Create a custom Leaflet control for Lat/Lon display
         L.Control.LatLonCoordinates = L.Control.extend({
             onAdd: function(map) {
                 this._div = L.DomUtil.create('div', 'leaflet-control-latlon-coordinates');
                 this._div.innerHTML = 'Lat: --.--, Lon: --.--'; // Initial display
                 return this._div;
             },
-
             onRemove: function(map) {
                 // Nothing specific to do on removal
             },
-
-            // Method to update the displayed coordinates
             updateCoordinates: function(lat, lng) {
                 const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
                 this._div.innerHTML = latLonText;
             }
         });
 
-        // Factory function for easy control creation
+        // Factory function for Lat/Lon display control
         L.control.latLonCoordinates = function(opts) {
             return new L.Control.LatLonCoordinates(opts);
         }
 
-        // 2. Add the coordinate control to the map at the bottom-left position
+        // 2. Add the Lat/Lon display control to the map at the bottom-left position
         const latLonControl = L.control.latLonCoordinates({ position: 'bottomleft' }).addTo(map);
 
-        // 3. Update coordinates in real-time as the mouse moves over the map
+        // 3. Update Lat/Lon coordinates in real-time as the mouse moves over the map
         map.on('mousemove', function(e) {
             latLonControl.updateCoordinates(e.latlng.lat, e.latlng.lng);
         });
 
         // --- END: Real-time Lat/Lon Coordinate Viewer ---
+
+
+        // --- START: Lat/Lon Coordinate Searcher ---
+        let searchMarker; // To store the marker placed by the search
+
+        L.Control.CoordSearch = L.Control.extend({
+            onAdd: function(map) {
+                var container = L.DomUtil.create('div', 'leaflet-control-coord-search');
+                L.DomEvent.disableClickPropagation(container); // Prevent clicks from propagating to the map
+
+                container.innerHTML = `
+                    <div>
+                        <label for="latInput">Lat:</label>
+                        <input type="number" id="latInput" placeholder="-33.45" step="any">
+                    </div>
+                    <div>
+                        <label for="lonInput">Lon:</label>
+                        <input type="number" id="lonInput" placeholder="-70.66" step="any">
+                    </div>
+                    <button id="searchCoordBtn">Buscar</button>
+                `;
+
+                var latInput = container.querySelector('#latInput');
+                var lonInput = container.querySelector('#lonInput');
+                var searchBtn = container.querySelector('#searchCoordBtn');
+
+                searchBtn.onclick = function() {
+                    var lat = parseFloat(latInput.value);
+                    var lon = parseFloat(lonInput.value);
+
+                    if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                        alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
+                        return;
+                    }
+
+                    var newLatLng = L.latLng(lat, lon);
+                    map.setView(newLatLng, 15); // Pan and zoom to the new location
+
+                    // Remove existing marker if any
+                    if (searchMarker) {
+                        map.removeLayer(searchMarker);
+                    }
+
+                    // Add a new marker at the searched location
+                    searchMarker = L.marker(newLatLng).addTo(map)
+                        .bindPopup(`<b>Coordenadas buscadas:</b><br>Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`)
+                        .openPopup();
+                };
+
+                return container;
+            }
+        });
+
+        L.control.coordSearch = function(opts) {
+            return new L.Control.CoordSearch(opts);
+        }
+
+        // Add the coordinate search control to the map (e.g., topright)
+        L.control.coordSearch({ position: 'topright' }).addTo(map);
+
+        // --- END: Lat/Lon Coordinate Searcher ---
+
         </script>
     </body>
 </html>
