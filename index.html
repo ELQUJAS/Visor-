@@ -42,7 +42,7 @@
             line-height: 1.5;
         }
         .leaflet-control-coord-search input {
-            width: 90px; /* Slightly wider to accommodate 6 decimals */
+            width: 140px; /* Adjusted width for combined coordinates */
             margin-right: 5px;
             border: 1px solid #ccc;
             padding: 3px;
@@ -58,10 +58,6 @@
         }
         .leaflet-control-coord-search button:hover {
             background-color: #005f8a;
-        }
-        .leaflet-control-coord-search label {
-            display: inline-block;
-            width: 30px; /* Align labels */
         }
         </style>
         <title></title>
@@ -168,9 +164,9 @@
             // This is the custom text replacement logic
             const parteClaveTextoOriginal = 'Operativo Veterinario de mascotas c. Vacunación: A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas.';
             const nuevoTexto = 'Operativo Veterinario de mascotas\
-\
+\n\
 c. Vacunación:\
-\
+\n\
 A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
 
             if (descripcionTexto.includes(parteClaveTextoOriginal)) {
@@ -179,19 +175,19 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
 
             // Popup content (no longer editable)
             var popupContent = '<table>\
-                        <tr>\
-                            <th scope="row">Categorías:</th>\
-                            <td data-property="Categorias">' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                        <tr>\
-                            <th scope="row">Descripción:</th>\
-                            <td data-property="Descrip.">' + autolinker.link(descripcionTexto) + '</td>\
-                        </tr>\
-                        <tr>\
-                            <th scope="row">Academicos:</th>\
-                            <td data-property="Academicos">' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                    </table>';
+                                <tr>\
+                                    <th scope="row">Categorías:</th>\
+                                    <td data-property="Categorias">' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
+                                </tr>\
+                                <tr>\
+                                    <th scope="row">Descripción:</th>\
+                                    <td data-property="Descrip.">' + autolinker.link(descripcionTexto) + '</td>\
+                                </tr>\
+                                <tr>\
+                                    <th scope="row">Academicos:</th>\
+                                    <td data-property="Academicos">' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
+                                </tr>\
+                                </table>';
 
             layer.bindPopup(popupContent, {maxHeight: 400});
 
@@ -292,26 +288,29 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
 
                 container.innerHTML = `
                     <div>
-                        <label for="latInput">Lat:</label>
-                        <input type="number" id="latInput" placeholder="-33.456789" step="0.000001">
-                    </div>
-                    <div>
-                        <label for="lonInput">Lon:</label>
-                        <input type="number" id="lonInput" placeholder="-70.665432" step="0.000001">
+                        <input type="text" id="coordInput" placeholder="Latitud, Longitud (ej: -33.456789, -70.665432)">
                     </div>
                     <button id="searchCoordBtn">Buscar</button>
                 `;
 
-                var latInput = container.querySelector('#latInput');
-                var lonInput = container.querySelector('#lonInput');
+                var coordInput = container.querySelector('#coordInput');
                 var searchBtn = container.querySelector('#searchCoordBtn');
 
                 searchBtn.onclick = function() {
-                    var lat = parseFloat(latInput.value);
-                    var lon = parseFloat(lonInput.value);
+                    var inputString = coordInput.value.trim();
+                    var parts = inputString.split(',').map(part => parseFloat(part.trim()));
+
+                    // Validate if exactly two numbers were parsed
+                    if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+                        alert('Por favor, introduce las coordenadas en el formato "Latitud, Longitud" (ej: -33.456789, -70.665432).');
+                        return;
+                    }
+
+                    var lat = parts[0];
+                    var lon = parts[1];
 
                     // Validate inputs: check if they are valid numbers and within range
-                    if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
                         alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
                         return;
                     }
