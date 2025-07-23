@@ -233,8 +233,15 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
         });
         bounds_group.addLayer(layer_temp4_2);
         map.addLayer(layer_temp4_2);
-        var baseMaps = {};
-        L.control.layers(baseMaps,{'<img src="legend/temp4_2.png" /> temp4': layer_temp4_2,"Google Satellite": layer_GoogleSatellite_1,"OpenStreetMap": layer_OpenStreetMap_0,},{collapsed:false}).addTo(map);
+
+        // MODIFIED: Base Maps organized in baseMaps object
+        var baseMaps = {
+            "OpenStreetMap": layer_OpenStreetMap_0,
+            "Google Satellite": layer_GoogleSatellite_1
+        };
+        // MODIFIED: layer_temp4_2 name changed to 'Actividades grupo'
+        L.control.layers(baseMaps,{'<img src="legend/temp4_2.png" /> Actividades grupo': layer_temp4_2},{collapsed:false}).addTo(map);
+
         setBounds();
         map.addControl(new L.Control.Search({
             layer: layer_temp4_2,
