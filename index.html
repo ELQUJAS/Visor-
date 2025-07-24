@@ -16,7 +16,7 @@
             padding: 0;
             margin: 0;
         }
-        /* Style for the coordinate display control */
+        /* Estilo para el control de visualización de coordenadas */
         .leaflet-control-latlon-coordinates {
             background: rgba(255, 255, 255, 0.8);
             padding: 5px 8px;
@@ -25,13 +25,13 @@
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 280px; /* Adjusted width to accommodate UTM */
+            min-width: 280px; /* Ancho ajustado para acomodar UTM */
             box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-            white-space: pre-wrap; /* Allow text to wrap for multiple lines */
-            line-height: 1.4; /* Improve readability for multiple lines */
+            white-space: pre-wrap; /* Permite que el texto se ajuste en varias líneas */
+            line-height: 1.4; /* Mejora la legibilidad en varias líneas */
         }
 
-        /* Style for the coordinate search control */
+        /* Estilo para el control de búsqueda de coordenadas */
         .leaflet-control-coord-search {
             background: rgba(255, 255, 255, 0.8);
             padding: 8px;
@@ -85,11 +85,45 @@
 
 
         var highlightLayer;
-        // Keep track of layers highlighted by category search
+        // Mantiene un registro de las capas resaltadas por búsqueda de categoría
         var categoryHighlightLayers = L.featureGroup();
-        map.addLayer(categoryHighlightLayers); // Add to map, but it will be empty initially
+        map.addLayer(categoryHighlightLayers); // Añadir al mapa, inicialmente estará vacío
 
-        function style_temp4_2_0(feature) { // Ensure this function can take a feature argument
+        // MODIFICACIÓN CLAVE: Asignar color por categoría
+        function style_temp4_2_0(feature) {
+            let fillColor = 'rgba(232,113,141,1.0)'; // Color por defecto si no hay categoría o no coincide
+
+            if (feature.properties && feature.properties['Categorias']) {
+                switch (feature.properties['Categorias']) {
+                    case 'Educación':
+                        fillColor = 'rgba(56,128,199,1.0)'; // Azul
+                        break;
+                    case 'Salud':
+                        fillColor = 'rgba(255,0,0,1.0)'; // Rojo
+                        break;
+                    case 'Medio Ambiente':
+                        fillColor = 'rgba(0,128,0,1.0)'; // Verde
+                        break;
+                    case 'Comunidad':
+                        fillColor = 'rgba(255,165,0,1.0)'; // Naranja
+                        break;
+                    // **¡AÑADE TUS PROPIAS CATEGORÍAS Y COLORES AQUÍ!**
+                    // Asegúrate de que los nombres de las categorías coincidan EXACTAMENTE
+                    // con los valores en tu archivo data/temp4_2.js
+                    //
+                    // Ejemplo:
+                    // case 'Investigación':
+                    //     fillColor = 'rgba(150,50,200,1.0)'; // Púrpura
+                    //     break;
+                    // case 'Desarrollo Urbano':
+                    //     fillColor = '#800080'; // Otro púrpura (hexadecimal)
+                    //     break;
+                    default:
+                        fillColor = 'rgba(128,0,128,1.0)'; // Púrpura para otras categorías no especificadas
+                        break;
+                }
+            }
+
             return {
                 pane: 'pane_temp4_2',
                 radius: 4.0,
@@ -101,14 +135,14 @@
                 weight: 1,
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(232,113,141,1.0)', // Original fill color
+                fillColor: fillColor, // Usar el color determinado por la categoría
                 interactive: true,
             };
         }
 
         function highlightFeature(e) {
             var layer = e.target;
-            // Only apply hover highlight if not already highlighted by category search
+            // Solo aplicar el resaltado al pasar el mouse si no está ya resaltado por búsqueda de categoría
             if (!categoryHighlightLayers.hasLayer(layer)) {
                 if (layer.feature.geometry.type === 'LineString') {
                     layer.setStyle({
@@ -125,33 +159,33 @@
 
         function resetHighlight(e) {
             var layer = e.target;
-            // Only reset if not highlighted by category search
+            // Solo restablecer si no está resaltado por búsqueda de categoría
             if (!categoryHighlightLayers.hasLayer(layer)) {
-                    // Reset the style to the original based on the feature properties
+                    // Restablecer el estilo al original basado en las propiedades de la característica
                     layer_temp4_2.resetStyle(layer);
             }
         }
 
-        // Custom function to apply highlight for category search
+        // Función personalizada para aplicar resaltado para la búsqueda de categoría
         function highlightCategoryPoints(category) {
-            // Clear any previously highlighted category points
-            clearCategoryHighlights(); // Use the existing clear function
+            // Borrar cualquier punto de categoría previamente resaltado
+            clearCategoryHighlights(); // Usar la función de limpieza existente
 
             layer_temp4_2.eachLayer(function(layer) {
                 if (layer.feature.properties && layer.feature.properties['Categorias'] === category) {
                     layer.setStyle({
-                        fillColor: '#ffff00', // Yellow highlight
+                        fillColor: '#ffff00', // Resaltado amarillo
                         fillOpacity: 1
                     });
-                    categoryHighlightLayers.addLayer(layer); // Add to the group of highlighted layers
+                    categoryHighlightLayers.addLayer(layer); // Añadir al grupo de capas resaltadas
                 }
             });
         }
 
-        // Function to clear all category highlights
+        // Función para borrar todos los resaltados de categoría
         function clearCategoryHighlights() {
             categoryHighlightLayers.eachLayer(function(layer) {
-                layer_temp4_2.resetStyle(layer); // Reset to original style
+                layer_temp4_2.resetStyle(layer); // Restablecer al estilo original
             });
             categoryHighlightLayers.clearLayers();
         }
@@ -214,17 +248,17 @@
         function pop_temp4_2(feature, layer) {
             layer.on({
                 mouseout: function(e) {
-                    resetHighlight(e); // Use the new resetHighlight function
+                    resetHighlight(e); // Usar la nueva función resetHighlight
                 },
                 mouseover: highlightFeature,
-                click: function(e) { // Add a click handler to prevent clearing on feature click
-                    e.originalEvent._clickedFeature = true; // Set a flag
+                click: function(e) { // Añadir un manejador de clic para evitar borrar al hacer clic en una característica
+                    e.originalEvent._clickedFeature = true; // Establecer una bandera
                 },
             });
 
             let descripcionTexto = feature.properties['Descrip.'] !== null ? feature.properties['Descrip.'].toLocaleString() : '';
 
-            // This is the custom text replacement logic
+            // Lógica personalizada de reemplazo de texto
             const parteClaveTextoOriginal = 'Operativo Veterinario de mascotas c. Vacunación: A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas.';
             const nuevoTexto = 'Operativo Veterinario de mascotas\n\nc. Vacunación:\n\nA partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
 
@@ -232,7 +266,7 @@
                 descripcionTexto = nuevoTexto;
             }
 
-            // Popup content (no longer editable)
+            // Contenido del popup
             var popupContent = '<table>\
                                 <tr>\
                                     <th scope="row">Categorías:</th>\
@@ -271,6 +305,7 @@
                     feature: feature,
                     variables: {}
                 };
+                // Aquí es donde se aplica el estilo que asigna colores por categoría
                 return L.circleMarker(latlng, style_temp4_2_0(feature));
             },
         });
@@ -285,7 +320,7 @@
 
         setBounds();
 
-        // MODIFIED: Category search control setup
+        // Configuración del control de búsqueda por categoría
         var searchControl = new L.Control.Search({
             layer: layer_temp4_2,
             initial: false,
@@ -294,17 +329,17 @@
         });
         map.addControl(searchControl);
 
-        // Listen for the 'search:locationfound' event
+        // Escuchar el evento 'search:locationfound'
         searchControl.on('search:locationfound', function(e) {
-            highlightCategoryPoints(e.text); // Highlight all points for the searched category
-            e.layer.openPopup(); // Still open popup for the specific found feature
-            // If you want to prevent the map from zooming to the single found feature, uncomment the next line:
+            highlightCategoryPoints(e.text); // Resaltar todos los puntos de la categoría buscada
+            e.layer.openPopup(); // Abrir el popup para la característica específica encontrada
+            // Si quieres evitar que el mapa se acerque a la característica encontrada, descomenta la siguiente línea:
             // e.preventDefault();
         });
 
-        // Listen for the 'search:collapsed' event to clear highlights if search bar is collapsed
+        // Escuchar el evento 'search:collapsed' para borrar los resaltados si la barra de búsqueda se colapsa
         searchControl.on('search:collapsed', function() {
-            // Only clear if no marker is actively showing (meaning a category search, not a single feature select)
+            // Solo borrar si no hay un marcador activo (lo que significa una búsqueda por categoría, no una selección de una sola característica)
             if (!searchControl._marker) {
                     clearCategoryHighlights();
             }
@@ -313,12 +348,16 @@
         document.getElementsByClassName('search-button')[0].className +=
             ' fa fa-binoculars';
 
-        ---
-        ## Función de Conversión Lat/Lon a UTM para Zona 18 Sur (WGS84)
-
-        Esta función implementa la proyección de coordenadas geográficas (Latitud, Longitud) a coordenadas UTM (Este, Norte) para la **Zona 18 Sur**.
-        ---
-        ```javascript
+        // --- Función de Conversión Lat/Lon a UTM ---
+        /**
+         * Función de Conversión Lat/Lon a UTM para Zona 18 Sur (WGS84)
+         * Esta función implementa la proyección de coordenadas geográficas (Latitud, Longitud)
+         * a coordenadas UTM (Este, Norte) para la Zona 18 Sur (WGS84).
+         *
+         * @param {number} lat - Latitud en grados decimales.
+         * @param {number} lon - Longitud en grados decimales.
+         * @returns {object} Un objeto con las propiedades easting, northing, zone, y hemisphere.
+         */
         function latLonToUtm18S(lat, lon) {
             // Constantes del elipsoide WGS84
             const a = 6378137.0; // Semieje mayor
@@ -374,28 +413,22 @@
                 hemisphere: 'S' // O 'N'
             };
         }
-        ```
+        // --- FIN: Función de Conversión UTM ---
 
-        ---
-        ## Implementación en el Visor de Coordenadas
+        // --- START: Visor de Coordenadas Lat/Lon en tiempo real ---
 
-        El resto del código se mantiene igual, con la integración de la nueva función de conversión en el control del mapa.
-        ---
-        ```javascript
-        // --- START: Real-time Lat/Lon Coordinate Viewer ---
-
-        // 1. Create a custom Leaflet control for Lat/Lon and UTM display
+        // 1. Crear un control personalizado de Leaflet para mostrar Lat/Lon y UTM
         L.Control.LatLonCoordinates = L.Control.extend({
             onAdd: function(map) {
                 this._div = L.DomUtil.create('div', 'leaflet-control-latlon-coordinates');
-                this._div.innerHTML = 'Lat: --.--, Lon: --.--<br>UTM E: --.--, N: --.-- (18S)'; // Initial display
+                this._div.innerHTML = 'Lat: --.--, Lon: --.--<br>UTM E: --.--, N: --.-- (18S)'; // Visualización inicial
                 return this._div;
             },
             onRemove: function(map) {
-                // Nothing specific to do on removal
+                // Nada específico que hacer al remover
             },
             updateCoordinates: function(lat, lng) {
-                const utm = latLonToUtm18S(lat, lng); // Call the corrected UTM conversion function
+                const utm = latLonToUtm18S(lat, lng); // Llamar a la función de conversión UTM corregida
 
                 const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
                 const utmText = `UTM E: ${utm.easting.toFixed(2)}, N: ${utm.northing.toFixed(2)} (${utm.zone}${utm.hemisphere})`;
@@ -403,29 +436,29 @@
             }
         });
 
-        // Factory function for Lat/Lon display control
+        // Función de fábrica para el control de visualización de Lat/Lon
         L.control.latLonCoordinates = function(opts) {
             return new L.Control.LatLonCoordinates(opts);
         }
 
-        // 2. Add the Lat/Lon display control to the map at the bottom-left position
+        // 2. Añadir el control de visualización de Lat/Lon al mapa en la posición inferior izquierda
         const latLonControl = L.control.latLonCoordinates({ position: 'bottomleft' }).addTo(map);
 
-        // 3. Update Lat/Lon coordinates in real-time as the mouse moves over the map
+        // 3. Actualizar las coordenadas Lat/Lon en tiempo real a medida que el mouse se mueve sobre el mapa
         map.on('mousemove', function(e) {
             latLonControl.updateCoordinates(e.latlng.lat, e.latlng.lng);
         });
 
-        // --- END: Real-time Lat/Lon Coordinate Viewer ---
+        // --- FIN: Visor de Coordenadas Lat/Lon en tiempo real ---
 
 
-        // --- START: Lat/Lon Coordinate Searcher (with 6 decimals and marker removal on popup close) ---
-        let searchMarker; // To store the marker placed by the search
+        // --- START: Buscador de Coordenadas Lat/Lon (con 6 decimales y eliminación de marcador al cerrar popup) ---
+        let searchMarker; // Para almacenar el marcador colocado por la búsqueda
 
         L.Control.CoordSearch = L.Control.extend({
             onAdd: function(map) {
                 var container = L.DomUtil.create('div', 'leaflet-control-coord-search');
-                L.DomEvent.disableClickPropagation(container); // Prevent clicks from propagating to the map
+                L.DomEvent.disableClickPropagation(container); // Evita que los clics se propaguen al mapa
 
                 container.innerHTML = `
                     <div>
@@ -441,7 +474,7 @@
                     var inputString = coordInput.value.trim();
                     var parts = inputString.split(',').map(part => parseFloat(part.trim()));
 
-                    // Validate if exactly two numbers were parsed
+                    // Validar si se analizaron exactamente dos números
                     if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
                         alert('Por favor, introduce las coordenadas en el formato "Latitud, Longitud" (ej: -33.456789, -70.665432).');
                         return;
@@ -450,30 +483,30 @@
                     var lat = parts[0];
                     var lon = parts[1];
 
-                    // Validate inputs: check if they are valid numbers and within range
+                    // Validar entradas: verificar que sean números válidos y dentro del rango
                     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
                         alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
                         return;
                     }
 
                     var newLatLng = L.latLng(lat, lon);
-                    map.setView(newLatLng, 15); // Pan and zoom to the new location (you can adjust zoom level)
+                    map.setView(newLatLng, 15); // Panear y hacer zoom a la nueva ubicación (puedes ajustar el nivel de zoom)
 
-                    // Remove existing marker if any
+                    // Eliminar marcador existente si lo hay
                     if (searchMarker) {
                         map.removeLayer(searchMarker);
                     }
 
-                    // Add a new marker at the searched location
+                    // Añadir un nuevo marcador en la ubicación buscada
                     searchMarker = L.marker(newLatLng).addTo(map)
                         .bindPopup(`<b>Coordenadas buscadas:</b><br>Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`)
                         .openPopup();
 
-                    // Add an event listener to the marker's popup close event
-                    // When the popup is closed, remove the marker from the map
+                    // Añadir un listener de evento para el cierre del popup del marcador
+                    // Cuando el popup se cierra, eliminar el marcador del mapa
                     searchMarker.on('popupclose', function() {
                         map.removeLayer(searchMarker);
-                        searchMarker = null; // Clear the reference
+                        searchMarker = null; // Limpiar la referencia
                     });
                 };
 
@@ -485,17 +518,17 @@
             return new L.Control.CoordSearch(opts);
         }
 
-        // Add the coordinate search control to the map (e.g., topright)
+        // Añadir el control de búsqueda de coordenadas al mapa (ej. arriba a la derecha)
         L.control.coordSearch({ position: 'topright' }).addTo(map);
 
-        // --- END: Lat/Lon Coordinate Searcher ---
+        // --- FIN: Buscador de Coordenadas Lat/Lon ---
 
-        // NEW: Clear category highlights when clicking anywhere on the map (outside a feature)
+        // NUEVO: Borrar resaltados de categoría al hacer clic en cualquier parte del mapa (fuera de una característica)
         map.on('click', function(e) {
-            if (!e.originalEvent._clickedFeature) { // Check if the flag wasn't set by a feature click
+            if (!e.originalEvent._clickedFeature) { // Verificar si la bandera no fue establecida por un clic de característica
                 clearCategoryHighlights();
             }
-            delete e.originalEvent._clickedFeature; // Clean up the flag
+            delete e.originalEvent._clickedFeature; // Limpiar la bandera
         });
 
         </script>
