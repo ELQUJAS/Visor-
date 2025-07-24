@@ -77,6 +77,12 @@
         <script src="js/leaflet-search.js"></script>
         <script src="data/temp4_2.js"></script>
         <script>
+        // ¡IMPORTANTE! Mueve la inicialización del mapa aquí, antes de cualquier uso de la variable 'map'
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[-42.65361211415855,-86.67829204370794],[-26.24182117346426,-55.74136867070552]]);
+
+
         var highlightLayer;
         // Keep track of layers highlighted by category search
         var categoryHighlightLayers = L.featureGroup();
@@ -104,14 +110,14 @@
             // Only apply hover highlight if not already highlighted by category search
             if (!categoryHighlightLayers.hasLayer(layer)) {
                 if (layer.feature.geometry.type === 'LineString') {
-                  layer.setStyle({
-                    color: '#ffff00',
-                  });
+                    layer.setStyle({
+                      color: '#ffff00',
+                    });
                 } else {
-                  layer.setStyle({
-                    fillColor: '#ffff00',
-                    fillOpacity: 1
-                  });
+                    layer.setStyle({
+                      fillColor: '#ffff00',
+                      fillOpacity: 1
+                    });
                 }
             }
         }
@@ -120,8 +126,8 @@
             var layer = e.target;
             // Only reset if not highlighted by category search
             if (!categoryHighlightLayers.hasLayer(layer)) {
-                 // Reset the style to the original based on the feature properties
-                layer_temp4_2.resetStyle(layer);
+                    // Reset the style to the original based on the feature properties
+                    layer_temp4_2.resetStyle(layer);
             }
         }
 
@@ -149,24 +155,22 @@
             categoryHighlightLayers.clearLayers();
         }
 
-        var map = L.map('map', {
-            zoomControl:true, maxZoom:28, minZoom:1
-        }).fitBounds([[-42.65361211415855,-86.67829204370794],[-26.24182117346426,-55.74136867070552]]);
+
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
         function removeEmptyRowsFromPopupContent(content, feature) {
-           var tempDiv = document.createElement('div');
-           tempDiv.innerHTML = content;
-           var rows = tempDiv.querySelectorAll('tr');
-           for (var i = 0; i < rows.length; i++) {
-               var td = rows[i].querySelector('td.visible-with-data');
-               var key = td ? td.id : '';
-               if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
-                   rows[i].parentNode.removeChild(rows[i]);
-               }
-           }
-           return tempDiv.innerHTML;
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            var rows = tempDiv.querySelectorAll('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var td = rows[i].querySelector('td.visible-with-data');
+                var key = td ? td.id : '';
+                if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                    rows[i].parentNode.removeChild(rows[i]);
+                }
+            }
+            return tempDiv.innerHTML;
         }
         document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
           var tagName = event.target.tagName,
@@ -221,11 +225,7 @@
 
             // This is the custom text replacement logic
             const parteClaveTextoOriginal = 'Operativo Veterinario de mascotas c. Vacunación: A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas.';
-            const nuevoTexto = 'Operativo Veterinario de mascotas\
-\n\
-c. Vacunación:\
-\n\
-A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
+            const nuevoTexto = 'Operativo Veterinario de mascotas\n\nc. Vacunación:\n\nA partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
 
             if (descripcionTexto.includes(parteClaveTextoOriginal)) {
                 descripcionTexto = nuevoTexto;
@@ -305,12 +305,12 @@ A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (
         searchControl.on('search:collapsed', function() {
             // Only clear if no marker is actively showing (meaning a category search, not a single feature select)
             if (!searchControl._marker) {
-                 clearCategoryHighlights();
+                    clearCategoryHighlights();
             }
         });
 
         document.getElementsByClassName('search-button')[0].className +=
-          ' fa fa-binoculars';
+            ' fa fa-binoculars';
 
         // --- START: Real-time Lat/Lon Coordinate Viewer ---
 
