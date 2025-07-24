@@ -27,8 +27,7 @@
 
             /* --- ESTILOS PARA LA LEYENDA PERSONALIZADA --- */
             .info.legend {
-                /* CAMBIO AQUÍ: Fondo blanco con 70% de opacidad (0.7) */
-                background: rgba(255, 255, 255, 0.7);
+                background: rgba(255, 255, 255, 0.7); /* Fondo blanco con 70% de opacidad */
                 padding: 10px;
                 border-radius: 5px;
                 box-shadow: 0 0 15px rgba(0,0,0,0.2);
@@ -67,7 +66,7 @@
             /* --- ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
             #coord-display {
                 position: absolute;
-                bottom: 10px; /* Ajusta según si hay otros elementos en la parte inferior */
+                bottom: 10px;
                 left: 10px;
                 background: rgba(255, 255, 255, 0.9);
                 padding: 8px 12px;
@@ -76,8 +75,8 @@
                 font-family: monospace;
                 font-size: 12px;
                 color: #333;
-                z-index: 1000; /* Asegura que esté por encima del mapa */
-                white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+                z-index: 1000;
+                white-space: nowrap;
             }
             /* --- FIN DE ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
         </style>
@@ -255,7 +254,7 @@
                 popup.setContent(updatedContent);
             }
 
-            // START: UPDATED getColor function with more categories and colors
+            // INICIO: Función getColor actualizada con más categorías y colores
             function getColor(nombre) {
                 const nameLower = String(nombre).toLowerCase(); // Convertir a minúsculas para comparación
 
@@ -268,7 +267,8 @@
                 } else if (nameLower.includes('reducción o mitigación de amenazas')) {
                     return '#FFA500'; // Naranja
                 }
-                // Add more categories and their colors here as needed
+                // Añade más categorías y sus colores aquí.
+                // Asegúrate de que los nombres coincidan exactamente con tu dato 'Name' en GeoJSON
                 else if (nameLower.includes('investigación de ecología y comportamiento')) {
                     return '#8A2BE2'; // Azul violeta
                 } else if (nameLower.includes('creación de áreas protegidas')) {
@@ -278,10 +278,10 @@
                 } else if (nameLower.includes('restauración de hábitat')) {
                     return '#DAA520'; // Dorado
                 }
-                // Default color if no match is found
-                return '#808080'; // Gray by default for undefined categories
+                // Color predeterminado si la categoría no coincide con ninguna de las anteriores
+                return '#808080'; // Gris por defecto
             }
-            // END: UPDATED getColor function
+            // FIN: Función getColor actualizada
 
             function style_union_2_0(feature) {
                 return {
@@ -434,7 +434,7 @@
                 var div = L.DomUtil.create('div', 'info legend');
                 div.innerHTML += '<div class="legend-title">Categorías</div>';
 
-                // START: UPDATED categories for the legend
+                // INICIO: Categorías actualizadas para la leyenda (deben coincidir con getColor)
                 var categories = [
                     { name: 'Monitoreo o muestreo de la especie', color: '#FF6347' }, // Rojo tomate
                     { name: 'Iniciativas de Educación y difusión', color: '#32CD32' }, // Verde lima
@@ -444,10 +444,10 @@
                     { name: 'Creación de áreas protegidas', color: '#20B2AA' }, // Verde mar claro
                     { name: 'Trabajo con comunidades locales', color: '#DC143C' }, // Rojo carmesí
                     { name: 'Restauración de hábitat', color: '#DAA520' }, // Dorado
-                    // Add more categories and their exact colors here to match getColor function
-                    { name: 'Otras', color: '#808080' } // Default for undefined
+                    // Añade aquí todas tus categorías exactas con sus colores correspondientes
+                    { name: 'Otras', color: '#808080' } // Categoría por defecto si no coincide
                 ];
-                // END: UPDATED categories for the legend
+                // FIN: Categorías actualizadas para la leyenda
 
                 for (var i = 0; i < categories.length; i++) {
                     div.innerHTML +=
