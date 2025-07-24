@@ -1,541 +1,1039 @@
 <!doctype html>
+
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
-        <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/qgis2web.css">
-        <link rel="stylesheet" href="css/fontawesome-all.min.css">
-        <link rel="stylesheet" href="css/leaflet-search.css">
-        <title>Mapa de Iniciativas</title>
-        <style>
-            html, body, #map {
-                width: 100%;
-                height: 100%;
-                padding: 0;
-                margin: 0;
-            }
-            .leaflet-control-layers-overlays img {
-                vertical-align: middle;
-                margin-right: 2px;
-                width: 16px;
-                height: 16px;
-            }
 
-            /* --- ESTILOS PARA LA LEYENDA PERSONALIZADA --- */
-            .info.legend {
-                background: rgba(255, 255, 255, 0.7); /* Fondo blanco con 70% de opacidad */
-                padding: 10px;
-                border-radius: 5px;
-                box-shadow: 0 0 15px rgba(0,0,0,0.2);
-                line-height: 1.5;
-                font-family: sans-serif;
-                font-size: 14px;
-            }
-            .legend-title {
-                font-weight: bold;
-                margin-bottom: 8px;
-                text-align: center;
-                font-size: 16px;
-                color: #333;
-            }
-            .legend-item {
-                display: flex;
-                align-items: center;
-                margin-bottom: 5px;
-            }
-            .legend-symbol {
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                border: 1px solid rgba(35,35,35,0.8);
-                margin-right: 10px;
-                flex-shrink: 0;
-            }
-            /* --- FIN DE ESTILOS DE LEYENDA --- */
+    <head>
 
-            /* --- ESTILO PARA JUSTIFICAR TEXTO EN POP-UPS --- */
-            .leaflet-popup-content {
-                text-align: justify;
-            }
-            /* --- FIN DE ESTILO PARA JUSTIFICAR TEXTO EN POP-UPS --- */
+        <meta charset="utf-8">
 
-            /* --- ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
-            #coord-display {
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                background: rgba(255, 255, 255, 0.9);
-                padding: 8px 12px;
-                border-radius: 5px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.2);
-                font-family: monospace;
-                font-size: 12px;
-                color: #333;
-                z-index: 1000;
-                white-space: nowrap;
-            }
-            /* --- FIN DE ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
-        </style>
-    </head>
-    <body>
-        <div id="map"></div>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-        <div id="coord-display">
-            Lat/Lng: --.--, --.--<br>
-            UTM: E: ---- N: ---- (Zona: --)
-        </div>
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
 
-        <script src="js/qgis2web_expressions.js"></script>
-        <script src="js/leaflet.js"></script>
-        <script src="js/leaflet.rotatedMarker.js"></script>
-        <script src="js/leaflet.pattern.js"></script>
-        <script src="js/leaflet-hash.js"></script>
-        <script src="js/Autolinker.min.js"></script>
-        <script src="js/rbush.min.js"></script>
-        <script src="js/labelgun.min.js"></script>
-        <script src="js/labels.js"></script>
-        <script src="js/leaflet-search.js"></script>
-        <script src="data/union_2.js"></script>
-        <script>
-            let highlightLayer;
-            let highlightedSearchLayers = []; // Almacena las capas resaltadas por el buscador
+        <meta name="mobile-web-app-capable" content="yes">
 
-            function highlightFeature(e) {
-                // Primero, limpia cualquier resaltado manual (mouseover)
-                if (highlightLayer && highlightLayer.defaultOptions && highlightLayer.defaultOptions.style) {
-                    highlightLayer.setStyle(highlightLayer.defaultOptions.style);
-                }
+        <meta name="apple-mobile-web-app-capable" content="yes">
 
-                highlightLayer = e.target;
-                highlightLayer.defaultOptions = highlightLayer.defaultOptions || {};
-                highlightLayer.defaultOptions.style = JSON.parse(JSON.stringify(highlightLayer.options));
+        <link rel="stylesheet" href="css/leaflet.css">
 
-                if (e.target.feature.geometry.type === 'LineString') {
-                    highlightLayer.setStyle({
-                        color: '#ffff00',
-                        weight: 4
-                    });
-                } else {
-                    highlightLayer.setStyle({
-                        fillColor: '#ffff00',
-                        fillOpacity: 1,
-                        radius: 10
-                    });
-                }
+        <link rel="stylesheet" href="css/qgis2web.css">
 
-                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                    highlightLayer.bringToFront();
-                }
-            }
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
 
-            function resetHighlight(e) {
-                if (e.target.defaultOptions && e.target.defaultOptions.style) {
-                    e.target.setStyle(e.target.defaultOptions.style);
-                } else {
-                    e.target.setStyle(style_union_2_0(e.target.feature));
-                }
-                highlightLayer = null;
-            }
+        <link rel="stylesheet" href="css/leaflet-search.css">
 
-            // Función para limpiar todos los resaltados de búsqueda
-            function clearSearchHighlights() {
-                if (highlightedSearchLayers.length > 0) { // Solo limpiar si hay algo resaltado
-                    highlightedSearchLayers.forEach(function(layer) {
-                        if (layer.defaultOptions && layer.defaultOptions.style) {
-                            layer.setStyle(layer.defaultOptions.style);
-                        } else {
-                            // Si no hay defaultOptions, restaurar el estilo original basado en la categoría
-                            layer.setStyle(style_union_2_0(layer.feature));
-                        }
-                    });
-                    highlightedSearchLayers = []; // Vaciar el array
-                    console.log("Resaltados de búsqueda eliminados."); // Para depuración
-                }
-            }
+        <title>Mapa de Iniciativas</title>
+
+        <style>
+
+            html, body, #map {
+
+                width: 100%;
+
+                height: 100%;
+
+                padding: 0;
+
+                margin: 0;
+
+            }
+
+            .leaflet-control-layers-overlays img {
+
+                vertical-align: middle;
+
+                margin-right: 2px;
+
+                width: 16px;
+
+                height: 16px;
+
+            }
 
 
-            var map = L.map('map', {
-                zoomControl:true, maxZoom:28, minZoom:1
-            });
 
-            var hash = new L.Hash(map);
-            map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
-            var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+            /* --- ESTILOS PARA LA LEYENDA PERSONALIZADA --- */
 
-            function removeEmptyRowsFromPopupContent(content, feature) {
-               var tempDiv = document.createElement('div');
-               tempDiv.innerHTML = content;
-               var rows = tempDiv.querySelectorAll('tr');
-               for (var i = 0; i < rows.length; i++) {
-                   var td = rows[i].querySelector('td.visible-with-data');
-                   var key = td ? td.id : '';
-                   if (td && td.classList.contains('visible-with-data') && (feature.properties[key] == null || feature.properties[key] === '')) {
-                       rows[i].parentNode.removeChild(rows[i]);
-                   }
-               }
-               return tempDiv.innerHTML;
-            }
+            .info.legend {
 
-            document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
-              var tagName = event.target.tagName,
-                popup = map._popup;
-              if (tagName === "IMG" && popup && !popup._updated) {
-                popup._updated = true;
-                popup.update();
-              }
-            }, true);
+                /* CAMBIO AQUÍ: Fondo blanco con 70% de opacidad (0.7) */
 
-            var bounds_group = new L.featureGroup([]);
-            
-            function setBounds() {
-                if (bounds_group.getLayers().length > 0) {
-                    map.fitBounds(bounds_group.getBounds());
-                }
-            }
+                background: rgba(255, 255, 255, 0.7);
 
-            map.createPane('pane_EsriSatellite_0');
-            map.getPane('pane_EsriSatellite_0').style.zIndex = 400;
-            var layer_EsriSatellite_0 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                pane: 'pane_EsriSatellite_0',
-                opacity: 1.0,
-                attribution: 'Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-                minZoom: 1,
-                maxZoom: 28,
-                minNativeZoom: 0,
-                maxNativeZoom: 17
-            });
-            map.addLayer(layer_EsriSatellite_0);
+                padding: 10px;
 
-            map.createPane('pane_OpenStreetMap_1');
-            map.getPane('pane_OpenStreetMap_1').style.zIndex = 401;
-            var layer_OpenStreetMap_1 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                pane: 'pane_OpenStreetMap_1',
-                opacity: 1.0,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                minZoom: 1,
-                maxZoom: 28,
-                minNativeZoom: 0,
-                maxNativeZoom: 19
-            });
+                border-radius: 5px;
 
-            function pop_union_2(feature, layer) {
-                layer.on({
-                    mouseout: resetHighlight,
-                    mouseover: highlightFeature,
-                    click: function(e) { // AÑADIDO: Manejar clic en una capa
-                        clearSearchHighlights(); // Limpiar cualquier resaltado de búsqueda anterior
-                        // Opcional: Aquí podrías añadir alguna lógica de resaltado temporal para el punto clickeado si lo deseas,
-                        // pero `highlightFeature` ya maneja el mouseover/mouseout.
-                        // Si quieres que el punto clickeado se quede resaltado, necesitarías una lógica diferente.
-                    }
-                });
-                var popupContent = '<table>\
-                    <tr>\
-                        <th scope="row">Categoría:</th>\
-                        <td class="visible-with-data" id="Name">' + (feature.properties ['Name'] !== null ? autolinker.link(feature.properties ['Name'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">Descripción:</th>\
-                        <td class="visible-with-data" id="descriptio">' + (feature.properties ['descriptio'] !== null ? autolinker.link(feature.properties ['descriptio'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">Academicos:</th>\
-                        <td class="visible-with-data" id="Academicos">' + (feature.properties ['Academicos'] !== null ? autolinker.link(feature.properties ['Academicos'].toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-                layer.bindPopup(popupContent, {maxHeight: 400});
-                var popup = layer.getPopup();
-                var content = popup.getContent();
-                var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-                popup.setContent(updatedContent);
-            }
+                box-shadow: 0 0 15px rgba(0,0,0,0.2);
 
-            // INICIO: Función getColor actualizada con más categorías y colores
-            function getColor(nombre) {
-                const nameLower = String(nombre).toLowerCase(); // Convertir a minúsculas para comparación
+                line-height: 1.5;
 
-                if (nameLower.includes('monitoreo o muestreo de la especie')) {
-                    return '#FF6347'; // Rojo tomate
-                } else if (nameLower.includes('iniciativas de educación y difusión')) {
-                    return '#32CD32'; // Verde lima
-                } else if (nameLower.includes('relevamiento de informacion sobre relacion guigna-humanos')) {
-                    return '#4169E1'; // Azul real
-                } else if (nameLower.includes('reducción o mitigación de amenazas')) {
-                    return '#FFA500'; // Naranja
-                }
-                // Añade más categorías y sus colores aquí.
-                // Asegúrate de que los nombres coincidan exactamente con tu dato 'Name' en GeoJSON
-                else if (nameLower.includes('investigación de ecología y comportamiento')) {
-                    return '#8A2BE2'; // Azul violeta
-                } else if (nameLower.includes('creación de áreas protegidas')) {
-                    return '#20B2AA'; // Verde mar claro
-                } else if (nameLower.includes('trabajo con comunidades locales')) {
-                    return '#DC143C'; // Rojo carmesí
-                } else if (nameLower.includes('restauración de hábitat')) {
-                    return '#DAA520'; // Dorado
-                }
-                // Color predeterminado si la categoría no coincide con ninguna de las anteriores
-                return '#808080'; // Gris por defecto
-            }
-            // FIN: Función getColor actualizada
+                font-family: sans-serif;
 
-            function style_union_2_0(feature) {
-                return {
-                    pane: 'pane_union_2',
-                    radius: 8.0,
-                    opacity: 1,
-                    color: 'rgba(35,35,35,1.0)',
-                    dashArray: '',
-                    lineCap: 'butt',
-                    lineJoin: 'miter',
-                    weight: 1,
-                    fill: true,
-                    fillOpacity: 1,
-                    fillColor: getColor(feature.properties['Name']),
-                    interactive: true,
-                }
-            }
+                font-size: 14px;
 
-            map.createPane('pane_union_2');
-            map.getPane('pane_union_2').style.zIndex = 402;
-            map.getPane('pane_union_2').style['mix-blend-mode'] = 'normal';
-            var layer_union_2 = new L.geoJson(json_union_2, {
-                attribution: 'Datos de Iniciativas',
-                interactive: true,
-                dataVar: 'json_union_2',
-                layerName: 'layer_union_2',
-                pane: 'pane_union_2',
-                onEachFeature: pop_union_2,
-                pointToLayer: function (feature, latlng) {
-                    var context = {
-                        feature: feature,
-                        variables: {}
-                    };
-                    return L.circleMarker(latlng, style_union_2_0(feature));
-                },
-            });
-            bounds_group.addLayer(layer_union_2);
-            map.addLayer(layer_union_2);
+            }
 
-            var baseMaps = {
-                "Esri Satellite": layer_EsriSatellite_0,
-                "OpenStreetMap": layer_OpenStreetMap_1
-            };
+            .legend-title {
 
-            var overlayMaps = {
-                "Iniciativas": layer_union_2
-            };
+                font-weight: bold;
 
-            L.control.layers(baseMaps, overlayMaps, {
-                collapsed: false
-            }).addTo(map);
+                margin-bottom: 8px;
 
-            map.on('overlayadd', function(eventLayer) {
-                if (eventLayer.layer === layer_union_2) {
-                    setBounds();
-                }
-            });
-            setBounds();
+                text-align: center;
 
-            // --- INICIO CÓDIGO DEL BUSCADOR POR CATEGORÍA CON RESALTADO ---
-            var searchControl = new L.Control.Search({
-                layer: layer_union_2,
-                initial: false,
-                hideMarkerOnCollapse: true,
-                propertyName: 'Name', // Buscar por la propiedad 'Name' (Categoría)
-                zoom: 16, // Este zoom será anulado por nuestro fitBounds si hay múltiples resultados
-                marker: false, // Desactivar el marcador por defecto
-                textPlaceholder: 'Buscar por Categoría...' // Texto en el buscador
-            });
-            map.addControl(searchControl);
+                font-size: 16px;
 
-            document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
+                color: #333;
 
-            // Escuchar el evento 'search:locationfound' para manejar los resultados
-            searchControl.on('search:locationfound', function(e) {
-                clearSearchHighlights(); // Limpiar resaltados anteriores
+            }
 
-                if (e.layer) { // e.layer es la capa encontrada por el buscador (una única característica)
-                    var searchedCategory = e.text; // El texto que se buscó
+            .legend-item {
 
-                    // Recolectar todas las capas (puntos) que pertenecen a esta categoría
-                    var matchingLayers = [];
-                    layer_union_2.eachLayer(function(layer) {
-                        // Asegurarse de que layer.feature.properties.Name exista y sea una cadena
-                        if (layer.feature && layer.feature.properties && layer.feature.properties.Name) {
-                            // Comparar el nombre de la categoría (sin distinguir mayúsculas/minúsculas)
-                            if (String(layer.feature.properties.Name).toLowerCase() === searchedCategory.toLowerCase()) {
-                                matchingLayers.push(layer);
-                            }
-                        }
-                    });
+                display: flex;
 
-                    if (matchingLayers.length > 0) {
-                        var group = new L.featureGroup(matchingLayers);
-                        map.fitBounds(group.getBounds(), { padding: [50, 50] }); // Zoom a todos los resultados
+                align-items: center;
 
-                        // Resaltar las capas encontradas
-                        matchingLayers.forEach(function(layer) {
-                            // Guardar el estilo original antes de modificarlo para poder restaurarlo
-                            layer.defaultOptions = layer.defaultOptions || {};
-                            layer.defaultOptions.style = JSON.parse(JSON.stringify(layer.options));
+                margin-bottom: 5px;
 
-                            layer.setStyle({
-                                fillColor: 'yellow', // El color de resaltado de la búsqueda sigue siendo amarillo
-                                opacity: 1,
-                                color: 'black', // Borde negro para mayor visibilidad
-                                weight: 2,
-                                radius: 10 // Un poco más grande para destacarse
-                            });
-                            highlightedSearchLayers.push(layer); // Almacenar para limpiar después
-                        });
+            }
 
-                    } else {
-                        alert('No se encontraron iniciativas de la categoría "' + searchedCategory + '".');
-                    }
-                }
-            });
+            .legend-symbol {
 
-            // Escuchar el evento 'search:cancel' o 'search:collapsed' para limpiar los resaltados
-            searchControl.on('search:cancel', function() {
-                clearSearchHighlights();
-            });
-            searchControl.on('search:collapsed', function() {
-                // Se dispara después de search:locationfound también, la limpieza inicial en locationfound es clave.
-                // Aquí solo limpiamos si el buscador se colapsa sin una búsqueda nueva.
-                if (searchControl._lastSearchText === "" && highlightedSearchLayers.length > 0) {
-                    clearSearchHighlights();
-                }
-            });
-            // --- FIN CÓDIGO DEL BUSCADOR POR CATEGORÍA CON RESALTADO ---
+                width: 14px;
 
-            // --- INICIO: CÓDIGO PARA LIMPIAR AL HACER CLIC EN EL MAPA ---
-            map.on('click', function(e) {
-                // La idea es limpiar si el clic no es capturado por una capa
-                // o si es sobre el mapa base directamente.
-                // e.originalEvent.target es el elemento DOM clicado.
-                // Si es un SVGElement (un punto del mapa), la capa ya maneja el clic.
-                // Si es el contenedor del mapa o algo más, entonces limpiamos.
-                if (!(e.originalEvent.target instanceof SVGElement) && highlightedSearchLayers.length > 0) {
-                    clearSearchHighlights();
-                }
-            });
-            // --- FIN: CÓDIGO PARA LIMPIAR AL HACER CLIC EN EL MAPA ---
+                height: 14px;
+
+                border-radius: 50%;
+
+                border: 1px solid rgba(35,35,35,0.8);
+
+                margin-right: 10px;
+
+                flex-shrink: 0;
+
+            }
+
+            /* --- FIN DE ESTILOS DE LEYENDA --- */
 
 
-            // --- CÓDIGO PARA LA LEYENDA PERSONALIZADA ---
-            var legend = L.control({position: 'bottomright'});
 
-            legend.onAdd = function (map) {
-                var div = L.DomUtil.create('div', 'info legend');
-                div.innerHTML += '<div class="legend-title">Categorías</div>';
+            /* --- ESTILO PARA JUSTIFICAR TEXTO EN POP-UPS --- */
 
-                // INICIO: Categorías actualizadas para la leyenda (deben coincidir con getColor)
-                var categories = [
-                    { name: 'Monitoreo o muestreo de la especie', color: '#FF6347' }, // Rojo tomate
-                    { name: 'Iniciativas de Educación y difusión', color: '#32CD32' }, // Verde lima
-                    { name: 'Relevamiento de información sobre relación güiña-humanos', color: '#4169E1' }, // Azul real
-                    { name: 'Reducción o mitigación de amenazas', color: '#FFA500' }, // Naranja
-                    { name: 'Investigación de ecología y comportamiento', color: '#8A2BE2' }, // Azul violeta
-                    { name: 'Creación de áreas protegidas', color: '#20B2AA' }, // Verde mar claro
-                    { name: 'Trabajo con comunidades locales', color: '#DC143C' }, // Rojo carmesí
-                    { name: 'Restauración de hábitat', color: '#DAA520' }, // Dorado
-                    // Añade aquí todas tus categorías exactas con sus colores correspondientes
-                    { name: 'Otras', color: '#808080' } // Categoría por defecto si no coincide
-                ];
-                // FIN: Categorías actualizadas para la leyenda
+            .leaflet-popup-content {
 
-                for (var i = 0; i < categories.length; i++) {
-                    div.innerHTML +=
-                        '<div class="legend-item">' +
-                            '<span class="legend-symbol" style="background:' + categories[i].color + '; border: 1px solid rgba(35,35,35,0.8);"></span>' +
-                            '<span>' + categories[i].name + '</span>' +
-                        '</div>';
-                }
-                return div;
-            };
-            legend.addTo(map);
-            // --- FIN DEL CÓDIGO DE LEYENDA ---
+                text-align: justify;
 
-            // --- CÓDIGO PARA MOSTRAR COORDENADAS DEL CURSOR (LAT/LNG y UTM) ---
+            }
 
-            // Función de conversión Lat/Lng a UTM (simplificada para Zona 19S, Hemisferio Sur)
-            // ADVERTENCIA: Esta es una implementación básica y NO es precisa para todas las zonas UTM.
-            // Para una solución robusta y multizona, se recomienda una librería como proj4js o utm.
-            function latLonToUtm(lat, lon) {
-                const a = 6378137.0; // Radio mayor del elipsoide WGS84
-                const f = 1 / 298.257223563; // Achatamiento del elipsoide WGS84
-                const k0 = 0.9996; // Factor de escala en el meridiano central
-                const E2 = 2 * f - f * f; // Excentricidad al cuadrado
-                const E4 = E2 * E2;
-                const E6 = E4 * E2;
-                const N0 = 10000000.0; // Falso Northing para el hemisferio sur
+            /* --- FIN DE ESTILO PARA JUSTIFICAR TEXTO EN POP-UPS --- */
 
-                const latRad = lat * Math.PI / 180;
-                const lonRad = lon * Math.PI / 180;
 
-                const zoneNum = Math.floor((lon + 180) / 6) + 1;
-                const lonOriginRad = (zoneNum * 6 - 183) * Math.PI / 180;
 
-                const deltaLon = lonRad - lonOriginRad;
+            /* --- ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
 
-                const sinLat = Math.sin(latRad);
-                const cosLat = Math.cos(latRad);
-                const tanLat = Math.tan(latRad);
+            #coord-display {
 
-                const Nu = a / Math.sqrt(1 - E2 * sinLat * sinLat);
-                const Rho = a * (1 - E2) / Math.pow(1 - E2 * sinLat * sinLat, 1.5);
-                const K1 = Nu * cosLat * cosLat / 2;
-                const K2 = Nu * cosLat * cosLat * cosLat * cosLat / 24 * (5 - tanLat * tanLat + 9 * E2 * cosLat * cosLat);
-                const K3 = Nu * cosLat;
-                const K4 = Nu * cosLat * cosLat * cosLat / 6 * (1 - tanLat * tanLat);
+                position: absolute;
 
-                const T = tanLat * tanLat;
-                const C = E2 * cosLat * cosLat / (1 - E2);
-                const A = (lonRad - lonOriginRad) * cosLat;
+                bottom: 10px; /* Ajusta según si hay otros elementos en la parte inferior */
 
-                const M = a * ((1 - E2 / 4 - 3 * E4 / 64 - 5 * E6 / 256) * latRad -
-                               (3 * E2 / 8 + 3 * E4 / 32 + 45 * E6 / 1024) * sinLat * cosLat +
-                               (15 * E4 / 256 + 45 * E6 / 1024) * sinLat * Math.pow(cosLat, 3) -
-                               (35 * E6 / 3072) * sinLat * Math.pow(cosLat, 5));
+                left: 10px;
 
-                const easting = k0 * Nu * (deltaLon + Math.pow(deltaLon, 3) * (1 - T + C) / 6 + Math.pow(deltaLon, 5) * (5 - 18 * T + T * T + 72 * C - 58 * E2) / 120) + 500000;
-                let northing = k0 * (M + Nu * tanLat * (deltaLon * deltaLon / 2 + Math.pow(deltaLon, 4) * (5 - T + 9 * C + 4 * C * C) / 24 + Math.pow(deltaLon, 6) * (61 - 58 * T + T * T + 600 * C - 330 * E2) / 720));
+                background: rgba(255, 255, 255, 0.9);
 
-                if (lat < 0) { // Hemisferio Sur
-                    northing = N0 + northing; // Northing verdadero + Falso Northing
-                }
+                padding: 8px 12px;
 
-                return {
-                    easting: Math.round(easting),
-                    northing: Math.round(northing),
-                    zone: zoneNum,
-                    hemisphere: (lat >= 0) ? 'N' : 'S'
-                };
-            }
+                border-radius: 5px;
 
-            var coordDisplay = document.getElementById('coord-display');
+                box-shadow: 0 0 10px rgba(0,0,0,0.2);
 
-            map.on('mousemove', function(e) {
-                var lat = e.latlng.lat.toFixed(6);
-                var lon = e.latlng.lng.toFixed(6);
+                font-family: monospace;
 
-                var utmCoords = latLonToUtm(e.latlng.lat, e.latlng.lng);
+                font-size: 12px;
 
-                // Determina el hemisferio para el display UTM
-                let hemisphereDisplay = (e.latlng.lat >= 0) ? 'N' : 'S';
+                color: #333;
 
-                coordDisplay.innerHTML = `
-                    Lat/Lng: ${lat}, ${lon}<br>
-                    UTM: E: ${utmCoords.easting} N: ${utmCoords.northing} (Zona: ${utmCoords.zone}${hemisphereDisplay})
-                `;
-            });
-            // --- FIN CÓDIGO PARA MOSTRAR COORDENADAS DEL CURSOR ---
+                z-index: 1000; /* Asegura que esté por encima del mapa */
 
-        </script>
-    </body>
+                white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+
+            }
+
+            /* --- FIN DE ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div id="map"></div>
+
+
+
+        <div id="coord-display">
+
+            Lat/Lng: --.--, --.--<br>
+
+            UTM: E: ---- N: ---- (Zona: --)
+
+        </div>
+
+
+
+        <script src="js/qgis2web_expressions.js"></script>
+
+        <script src="js/leaflet.js"></script>
+
+        <script src="js/leaflet.rotatedMarker.js"></script>
+
+        <script src="js/leaflet.pattern.js"></script>
+
+        <script src="js/leaflet-hash.js"></script>
+
+        <script src="js/Autolinker.min.js"></script>
+
+        <script src="js/rbush.min.js"></script>
+
+        <script src="js/labelgun.min.js"></script>
+
+        <script src="js/labels.js"></script>
+
+        <script src="js/leaflet-search.js"></script>
+
+        <script src="data/union_2.js"></script>
+
+        <script>
+
+            let highlightLayer;
+
+            let highlightedSearchLayers = []; // Almacena las capas resaltadas por el buscador
+
+
+
+            function highlightFeature(e) {
+
+                // Primero, limpia cualquier resaltado manual (mouseover)
+
+                if (highlightLayer && highlightLayer.defaultOptions && highlightLayer.defaultOptions.style) {
+
+                    highlightLayer.setStyle(highlightLayer.defaultOptions.style);
+
+                }
+
+
+
+                highlightLayer = e.target;
+
+                highlightLayer.defaultOptions = highlightLayer.defaultOptions || {};
+
+                highlightLayer.defaultOptions.style = JSON.parse(JSON.stringify(highlightLayer.options));
+
+
+
+                if (e.target.feature.geometry.type === 'LineString') {
+
+                    highlightLayer.setStyle({
+
+                        color: '#ffff00',
+
+                        weight: 4
+
+                    });
+
+                } else {
+
+                    highlightLayer.setStyle({
+
+                        fillColor: '#ffff00',
+
+                        fillOpacity: 1,
+
+                        radius: 10
+
+                    });
+
+                }
+
+
+
+                if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+
+                    highlightLayer.bringToFront();
+
+                }
+
+            }
+
+
+
+            function resetHighlight(e) {
+
+                if (e.target.defaultOptions && e.target.defaultOptions.style) {
+
+                    e.target.setStyle(e.target.defaultOptions.style);
+
+                } else {
+
+                    e.target.setStyle(style_union_2_0(e.target.feature));
+
+                }
+
+                highlightLayer = null;
+
+            }
+
+
+
+            // Función para limpiar todos los resaltados de búsqueda
+
+            function clearSearchHighlights() {
+
+                if (highlightedSearchLayers.length > 0) { // Solo limpiar si hay algo resaltado
+
+                    highlightedSearchLayers.forEach(function(layer) {
+
+                        if (layer.defaultOptions && layer.defaultOptions.style) {
+
+                            layer.setStyle(layer.defaultOptions.style);
+
+                        } else {
+
+                            // Si no hay defaultOptions, restaurar el estilo original basado en la categoría
+
+                            layer.setStyle(style_union_2_0(layer.feature));
+
+                        }
+
+                    });
+
+                    highlightedSearchLayers = []; // Vaciar el array
+
+                    console.log("Resaltados de búsqueda eliminados."); // Para depuración
+
+                }
+
+            }
+
+
+
+
+
+            var map = L.map('map', {
+
+                zoomControl:true, maxZoom:28, minZoom:1
+
+            });
+
+
+
+            var hash = new L.Hash(map);
+
+            map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+
+            var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+
+
+
+            function removeEmptyRowsFromPopupContent(content, feature) {
+
+               var tempDiv = document.createElement('div');
+
+               tempDiv.innerHTML = content;
+
+               var rows = tempDiv.querySelectorAll('tr');
+
+               for (var i = 0; i < rows.length; i++) {
+
+                   var td = rows[i].querySelector('td.visible-with-data');
+
+                   var key = td ? td.id : '';
+
+                   if (td && td.classList.contains('visible-with-data') && (feature.properties[key] == null || feature.properties[key] === '')) {
+
+                       rows[i].parentNode.removeChild(rows[i]);
+
+                   }
+
+               }
+
+               return tempDiv.innerHTML;
+
+            }
+
+
+
+            document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
+
+              var tagName = event.target.tagName,
+
+                popup = map._popup;
+
+              if (tagName === "IMG" && popup && !popup._updated) {
+
+                popup._updated = true;
+
+                popup.update();
+
+              }
+
+            }, true);
+
+
+
+            var bounds_group = new L.featureGroup([]);
+
+            
+
+            function setBounds() {
+
+                if (bounds_group.getLayers().length > 0) {
+
+                    map.fitBounds(bounds_group.getBounds());
+
+                }
+
+            }
+
+
+
+            map.createPane('pane_EsriSatellite_0');
+
+            map.getPane('pane_EsriSatellite_0').style.zIndex = 400;
+
+            var layer_EsriSatellite_0 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+
+                pane: 'pane_EsriSatellite_0',
+
+                opacity: 1.0,
+
+                attribution: 'Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+
+                minZoom: 1,
+
+                maxZoom: 28,
+
+                minNativeZoom: 0,
+
+                maxNativeZoom: 17
+
+            });
+
+            map.addLayer(layer_EsriSatellite_0);
+
+
+
+            map.createPane('pane_OpenStreetMap_1');
+
+            map.getPane('pane_OpenStreetMap_1').style.zIndex = 401;
+
+            var layer_OpenStreetMap_1 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+                pane: 'pane_OpenStreetMap_1',
+
+                opacity: 1.0,
+
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+
+                minZoom: 1,
+
+                maxZoom: 28,
+
+                minNativeZoom: 0,
+
+                maxNativeZoom: 19
+
+            });
+
+
+
+            function pop_union_2(feature, layer) {
+
+                layer.on({
+
+                    mouseout: resetHighlight,
+
+                    mouseover: highlightFeature,
+
+                    click: function(e) { // AÑADIDO: Manejar clic en una capa
+
+                        clearSearchHighlights(); // Limpiar cualquier resaltado de búsqueda anterior
+
+                        // Opcional: Aquí podrías añadir alguna lógica de resaltado temporal para el punto clickeado si lo deseas,
+
+                        // pero `highlightFeature` ya maneja el mouseover/mouseout.
+
+                        // Si quieres que el punto clickeado se quede resaltado, necesitarías una lógica diferente.
+
+                    }
+
+                });
+
+                var popupContent = '<table>\
+
+                    <tr>\
+
+                        <th scope="row">Categoría:</th>\
+
+                        <td class="visible-with-data" id="Name">' + (feature.properties ['Name'] !== null ? autolinker.link(feature.properties ['Name'].toLocaleString()) : '') + '</td>\
+
+                    </tr>\
+
+                    <tr>\
+
+                        <th scope="row">Descripción:</th>\
+
+                        <td class="visible-with-data" id="descriptio">' + (feature.properties ['descriptio'] !== null ? autolinker.link(feature.properties ['descriptio'].toLocaleString()) : '') + '</td>\
+
+                    </tr>\
+
+                    <tr>\
+
+                        <th scope="row">Academicos:</th>\
+
+                        <td class="visible-with-data" id="Academicos">' + (feature.properties ['Academicos'] !== null ? autolinker.link(feature.properties ['Academicos'].toLocaleString()) : '') + '</td>\
+
+                    </tr>\
+
+                </table>';
+
+                layer.bindPopup(popupContent, {maxHeight: 400});
+
+                var popup = layer.getPopup();
+
+                var content = popup.getContent();
+
+                var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+
+                popup.setContent(updatedContent);
+
+            }
+
+
+
+            function getColor(nombre) {
+
+                const nameLower = String(nombre).toLowerCase();
+
+
+
+                if (nameLower.includes('monitoreo o muestreo de la especie')) {
+
+                    return 'deepskyblue';
+
+                } else if (nameLower.includes('iniciativas de educación y difusión')) {
+
+                    return 'white';
+
+                } else if (nameLower.includes('relevamiento de informacion sobre relacion guigna-humanos')) {
+
+                    return 'lime';
+
+                } else if (nameLower.includes('reducción o mitigación de amenazas')) {
+
+                    return 'red';
+
+                }
+
+                return '#808080';
+
+            }
+
+
+
+            function style_union_2_0(feature) {
+
+                return {
+
+                    pane: 'pane_union_2',
+
+                    radius: 8.0,
+
+                    opacity: 1,
+
+                    color: 'rgba(35,35,35,1.0)',
+
+                    dashArray: '',
+
+                    lineCap: 'butt',
+
+                    lineJoin: 'miter',
+
+                    weight: 1,
+
+                    fill: true,
+
+                    fillOpacity: 1,
+
+                    fillColor: getColor(feature.properties['Name']),
+
+                    interactive: true,
+
+                }
+
+            }
+
+
+
+            map.createPane('pane_union_2');
+
+            map.getPane('pane_union_2').style.zIndex = 402;
+
+            map.getPane('pane_union_2').style['mix-blend-mode'] = 'normal';
+
+            var layer_union_2 = new L.geoJson(json_union_2, {
+
+                attribution: 'Datos de Iniciativas',
+
+                interactive: true,
+
+                dataVar: 'json_union_2',
+
+                layerName: 'layer_union_2',
+
+                pane: 'pane_union_2',
+
+                onEachFeature: pop_union_2,
+
+                pointToLayer: function (feature, latlng) {
+
+                    var context = {
+
+                        feature: feature,
+
+                        variables: {}
+
+                    };
+
+                    return L.circleMarker(latlng, style_union_2_0(feature));
+
+                },
+
+            });
+
+            bounds_group.addLayer(layer_union_2);
+
+            map.addLayer(layer_union_2);
+
+
+
+            var baseMaps = {
+
+                "Esri Satellite": layer_EsriSatellite_0,
+
+                "OpenStreetMap": layer_OpenStreetMap_1
+
+            };
+
+
+
+            var overlayMaps = {
+
+                "Iniciativas": layer_union_2
+
+            };
+
+
+
+            L.control.layers(baseMaps, overlayMaps, {
+
+                collapsed: false
+
+            }).addTo(map);
+
+
+
+            map.on('overlayadd', function(eventLayer) {
+
+                if (eventLayer.layer === layer_union_2) {
+
+                    setBounds();
+
+                }
+
+            });
+
+            setBounds();
+
+
+
+            // --- INICIO CÓDIGO DEL BUSCADOR POR CATEGORÍA CON RESALTADO ---
+
+            var searchControl = new L.Control.Search({
+
+                layer: layer_union_2,
+
+                initial: false,
+
+                hideMarkerOnCollapse: true,
+
+                propertyName: 'Name', // Buscar por la propiedad 'Name' (Categoría)
+
+                zoom: 16, // Este zoom será anulado por nuestro fitBounds si hay múltiples resultados
+
+                marker: false, // Desactivar el marcador por defecto
+
+                textPlaceholder: 'Buscar por Categoría...' // Texto en el buscador
+
+            });
+
+            map.addControl(searchControl);
+
+
+
+            document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
+
+
+
+            // Escuchar el evento 'search:locationfound' para manejar los resultados
+
+            searchControl.on('search:locationfound', function(e) {
+
+                clearSearchHighlights(); // Limpiar resaltados anteriores
+
+
+
+                if (e.layer) { // e.layer es la capa encontrada por el buscador (una única característica)
+
+                    var searchedCategory = e.text; // El texto que se buscó
+
+
+
+                    // Recolectar todas las capas (puntos) que pertenecen a esta categoría
+
+                    var matchingLayers = [];
+
+                    layer_union_2.eachLayer(function(layer) {
+
+                        // Asegurarse de que layer.feature.properties.Name exista y sea una cadena
+
+                        if (layer.feature && layer.feature.properties && layer.feature.properties.Name) {
+
+                            // Comparar el nombre de la categoría (sin distinguir mayúsculas/minúsculas)
+
+                            if (String(layer.feature.properties.Name).toLowerCase() === searchedCategory.toLowerCase()) {
+
+                                matchingLayers.push(layer);
+
+                            }
+
+                        }
+
+                    });
+
+
+
+                    if (matchingLayers.length > 0) {
+
+                        var group = new L.featureGroup(matchingLayers);
+
+                        map.fitBounds(group.getBounds(), { padding: [50, 50] }); // Zoom a todos los resultados
+
+
+
+                        // Resaltar las capas encontradas
+
+                        matchingLayers.forEach(function(layer) {
+
+                            // Guardar el estilo original antes de modificarlo para poder restaurarlo
+
+                            layer.defaultOptions = layer.defaultOptions || {};
+
+                            layer.defaultOptions.style = JSON.parse(JSON.stringify(layer.options));
+
+
+
+                            layer.setStyle({
+
+                                fillColor: 'yellow', // El color de resaltado de la búsqueda sigue siendo amarillo
+
+                                opacity: 1,
+
+                                color: 'black', // Borde negro para mayor visibilidad
+
+                                weight: 2,
+
+                                radius: 10 // Un poco más grande para destacarse
+
+                            });
+
+                            highlightedSearchLayers.push(layer); // Almacenar para limpiar después
+
+                        });
+
+
+
+                    } else {
+
+                        alert('No se encontraron iniciativas de la categoría "' + searchedCategory + '".');
+
+                    }
+
+                }
+
+            });
+
+
+
+            // Escuchar el evento 'search:cancel' o 'search:collapsed' para limpiar los resaltados
+
+            searchControl.on('search:cancel', function() {
+
+                clearSearchHighlights();
+
+            });
+
+            searchControl.on('search:collapsed', function() {
+
+                // Se dispara después de search:locationfound también, la limpieza inicial en locationfound es clave.
+
+                // Aquí solo limpiamos si el buscador se colapsa sin una búsqueda nueva.
+
+                if (searchControl._lastSearchText === "" && highlightedSearchLayers.length > 0) {
+
+                    clearSearchHighlights();
+
+                }
+
+            });
+
+            // --- FIN CÓDIGO DEL BUSCADOR POR CATEGORÍA CON RESALTADO ---
+
+
+
+            // --- INICIO: CÓDIGO PARA LIMPIAR AL HACER CLIC EN EL MAPA ---
+
+            map.on('click', function(e) {
+
+                // La idea es limpiar si el clic no es capturado por una capa
+
+                // o si es sobre el mapa base directamente.
+
+                // e.originalEvent.target es el elemento DOM clicado.
+
+                // Si es un SVGElement (un punto del mapa), la capa ya maneja el clic.
+
+                // Si es el contenedor del mapa o algo más, entonces limpiamos.
+
+                if (!(e.originalEvent.target instanceof SVGElement) && highlightedSearchLayers.length > 0) {
+
+                    clearSearchHighlights();
+
+                }
+
+            });
+
+            // --- FIN: CÓDIGO PARA LIMPIAR AL HACER CLIC EN EL MAPA ---
+
+
+
+
+
+            // --- CÓDIGO PARA LA LEYENDA PERSONALIZADA ---
+
+            var legend = L.control({position: 'bottomright'});
+
+
+
+            legend.onAdd = function (map) {
+
+                var div = L.DomUtil.create('div', 'info legend');
+
+                div.innerHTML += '<div class="legend-title">Categorías</div>';
+
+
+
+                var categories = [
+
+                    { name: 'Monitoreo o muestreo de la especie', color: 'deepskyblue' },
+
+                    { name: 'Iniciativas de Educación y difusión', color: 'white' },
+
+                    { name: 'Relevamiento de información sobre relación güiña-humanos', color: 'lime' },
+
+                    { name: 'Reducción o mitigación de amenazas', color: 'red' }
+
+                ];
+
+
+
+                for (var i = 0; i < categories.length; i++) {
+
+                    div.innerHTML +=
+
+                        '<div class="legend-item">' +
+
+                            '<span class="legend-symbol" style="background:' + categories[i].color + '; border: 1px solid rgba(35,35,35,0.8);"></span>' +
+
+                            '<span>' + categories[i].name + '</span>' +
+
+                        '</div>';
+
+                }
+
+                return div;
+
+            };
+
+            legend.addTo(map);
+
+            // --- FIN DEL CÓDIGO DE LEYENDA ---
+
+
+
+            // --- CÓDIGO PARA MOSTRAR COORDENADAS DEL CURSOR (LAT/LNG y UTM) ---
+
+
+
+            // Función de conversión Lat/Lng a UTM (simplificada para Zona 19S, Hemisferio Sur)
+
+            // ADVERTENCIA: Esta es una implementación básica y NO es precisa para todas las zonas UTM.
+
+            // Para una solución robusta y multizona, se recomienda una librería como proj4js o utm.
+
+            function latLonToUtm(lat, lon) {
+
+                const a = 6378137.0; // Radio mayor del elipsoide WGS84
+
+                const f = 1 / 298.257223563; // Achatamiento del elipsoide WGS84
+
+                const k0 = 0.9996; // Factor de escala en el meridiano central
+
+                const E2 = 2 * f - f * f; // Excentricidad al cuadrado
+
+                const E4 = E2 * E2;
+
+                const E6 = E4 * E2;
+
+                const N0 = 10000000.0; // Falso Northing para el hemisferio sur
+
+
+
+                const latRad = lat * Math.PI / 180;
+
+                const lonRad = lon * Math.PI / 180;
+
+
+
+                const zoneNum = Math.floor((lon + 180) / 6) + 1;
+
+                const lonOriginRad = (zoneNum * 6 - 183) * Math.PI / 180;
+
+
+
+                const deltaLon = lonRad - lonOriginRad;
+
+
+
+                const sinLat = Math.sin(latRad);
+
+                const cosLat = Math.cos(latRad);
+
+                const tanLat = Math.tan(latRad);
+
+
+
+                const Nu = a / Math.sqrt(1 - E2 * sinLat * sinLat);
+
+                const Rho = a * (1 - E2) / Math.pow(1 - E2 * sinLat * sinLat, 1.5);
+
+                const K1 = Nu * cosLat * cosLat / 2;
+
+                const K2 = Nu * cosLat * cosLat * cosLat * cosLat / 24 * (5 - tanLat * tanLat + 9 * E2 * cosLat * cosLat);
+
+                const K3 = Nu * cosLat;
+
+                const K4 = Nu * cosLat * cosLat * cosLat / 6 * (1 - tanLat * tanLat);
+
+
+
+                const T = tanLat * tanLat;
+
+                const C = E2 * cosLat * cosLat / (1 - E2);
+
+                const A = (lonRad - lonOriginRad) * cosLat;
+
+
+
+                const M = a * ((1 - E2 / 4 - 3 * E4 / 64 - 5 * E6 / 256) * latRad -
+
+                               (3 * E2 / 8 + 3 * E4 / 32 + 45 * E6 / 1024) * sinLat * cosLat +
+
+                               (15 * E4 / 256 + 45 * E6 / 1024) * sinLat * Math.pow(cosLat, 3) -
+
+                               (35 * E6 / 3072) * sinLat * Math.pow(cosLat, 5));
+
+
+
+                const easting = k0 * Nu * (deltaLon + Math.pow(deltaLon, 3) * (1 - T + C) / 6 + Math.pow(deltaLon, 5) * (5 - 18 * T + T * T + 72 * C - 58 * E2) / 120) + 500000;
+
+                let northing = k0 * (M + Nu * tanLat * (deltaLon * deltaLon / 2 + Math.pow(deltaLon, 4) * (5 - T + 9 * C + 4 * C * C) / 24 + Math.pow(deltaLon, 6) * (61 - 58 * T + T * T + 600 * C - 330 * E2) / 720));
+
+
+
+                if (lat < 0) { // Hemisferio Sur
+
+                    northing = N0 + northing; // Northing verdadero + Falso Northing
+
+                }
+
+
+
+                return {
+
+                    easting: Math.round(easting),
+
+                    northing: Math.round(northing),
+
+                    zone: zoneNum,
+
+                    hemisphere: (lat >= 0) ? 'N' : 'S'
+
+                };
+
+            }
+
+
+
+            var coordDisplay = document.getElementById('coord-display');
+
+
+
+            map.on('mousemove', function(e) {
+
+                var lat = e.latlng.lat.toFixed(6);
+
+                var lon = e.latlng.lng.toFixed(6);
+
+
+
+                var utmCoords = latLonToUtm(e.latlng.lat, e.latlng.lng);
+
+
+
+                // Determina el hemisferio para el display UTM
+
+                let hemisphereDisplay = (e.latlng.lat >= 0) ? 'N' : 'S';
+
+
+
+                coordDisplay.innerHTML = `
+
+                    Lat/Lng: ${lat}, ${lon}<br>
+
+                    UTM: E: ${utmCoords.easting} N: ${utmCoords.northing} (Zona: ${utmCoords.zone}${hemisphereDisplay})
+
+                `;
+
+            });
+
+            // --- FIN CÓDIGO PARA MOSTRAR COORDENADAS DEL CURSOR ---
+
+
+
+        </script>
+
+    </body>
+
 </html>
