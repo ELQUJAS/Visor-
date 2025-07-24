@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,88 +7,65 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/qgis2web.css">
-        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
         <link rel="stylesheet" href="css/leaflet-search.css">
-        <title>Mapa de Iniciativas</title>
         <style>
-            html, body, #map {
-                width: 100%;
-                height: 100%;
-                padding: 0;
-                margin: 0;
-            }
-            .leaflet-control-layers-overlays img {
-                vertical-align: middle;
-                margin-right: 2px;
-                width: 16px;
-                height: 16px;
-            }
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        /* Estilo para el control de visualización de coordenadas */
+        .leaflet-control-latlon-coordinates {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #333;
+            text-align: left;
+            min-width: 280px; /* Ancho ajustado para acomodar UTM */
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            white-space: pre-wrap; /* Permite que el texto se ajuste en varias líneas */
+            line-height: 1.4; /* Mejora la legibilidad en varias líneas */
+        }
 
-            /* --- ESTILOS PARA LA LEYENDA PERSONALIZADA --- */
-            .info.legend {
-                background: rgba(255, 255, 255, 0.7); /* Fondo blanco con 70% de opacidad */
-                padding: 10px;
-                border-radius: 5px;
-                box-shadow: 0 0 15px rgba(0,0,0,0.2);
-                line-height: 1.5;
-                font-family: sans-serif;
-                font-size: 14px;
-            }
-            .legend-title {
-                font-weight: bold;
-                margin-bottom: 8px;
-                text-align: center;
-                font-size: 16px;
-                color: #333;
-            }
-            .legend-item {
-                display: flex;
-                align-items: center;
-                margin-bottom: 5px;
-            }
-            .legend-symbol {
-                width: 14px;
-                height: 14px;
-                border-radius: 50%;
-                border: 1px solid rgba(35,35,35,0.8);
-                margin-right: 10px;
-                flex-shrink: 0;
-            }
-            /* --- FIN DE ESTILOS DE LEYENDA --- */
-
-            /* --- ESTILO PARA JUSTIFICAR TEXTO EN POP-UPS --- */
-            .leaflet-popup-content {
-                text-align: justify;
-            }
-            /* --- FIN DE ESTILO PARA JUSTIFICAR TEXTO EN POP-UPS --- */
-
-            /* --- ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
-            #coord-display {
-                position: absolute;
-                bottom: 10px;
-                left: 10px;
-                background: rgba(255, 255, 255, 0.9);
-                padding: 8px 12px;
-                border-radius: 5px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.2);
-                font-family: monospace;
-                font-size: 12px;
-                color: #333;
-                z-index: 1000;
-                white-space: nowrap;
-            }
-            /* --- FIN DE ESTILOS PARA EL RECUADRO DE COORDENADAS DEL CURSOR --- */
+        /* Estilo para el control de búsqueda de coordenadas */
+        .leaflet-control-coord-search {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: sans-serif;
+            font-size: 13px;
+            color: #333;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            line-height: 1.5;
+        }
+        .leaflet-control-coord-search input {
+            width: 140px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            padding: 3px;
+            border-radius: 3px;
+        }
+        .leaflet-control-coord-search button {
+            padding: 3px 8px;
+            border: 1px solid #0078A8;
+            background-color: #0078A8;
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .leaflet-control-coord-search button:hover {
+            background-color: #005f8a;
+        }
         </style>
+        <title></title>
     </head>
     <body>
-        <div id="map"></div>
-
-        <div id="coord-display">
-            Lat/Lng: --.--, --.--<br>
-            UTM: E: ---- N: ---- (Zona: --)
+        <div id="map">
         </div>
-
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/leaflet.rotatedMarker.js"></script>
@@ -99,463 +76,464 @@
         <script src="js/labelgun.min.js"></script>
         <script src="js/labels.js"></script>
         <script src="js/leaflet-search.js"></script>
-        <script src="data/union_2.js"></script>
+        <script src="data/temp4_2.js"></script>
+
         <script>
-            // ENVUELVE TU CÓDIGO LEAFLET EN ESTO PARA ASEGURAR QUE EL DOM ESTÉ CARGADO
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log("DOM Cargado. Iniciando script del mapa.");
+        document.addEventListener('DOMContentLoaded', function() {
+            // ¡AHORA SÍ! Todas las librerías y el DOM están listos.
+            var map = L.map('map', {
+                zoomControl:true, maxZoom:28, minZoom:1
+            }).fitBounds([[-42.65361211415855,-86.67829204370794],[-26.24182117346426,-55.74136867070552]]);
 
-                // VERIFICA SI EL ELEMENTO MAPA EXISTE
-                const mapElement = document.getElementById('map');
-                if (!mapElement) {
-                    console.error("Error: El elemento div con id='map' no fue encontrado. Asegúrate de que existe en tu HTML.");
-                    alert("Error: No se pudo cargar el mapa. El contenedor del mapa no se encontró.");
-                    return; // Detiene la ejecución si no se encuentra el mapa
+
+            var highlightLayer;
+            // Mantiene un registro de las capas resaltadas por búsqueda de categoría
+            var categoryHighlightLayers = L.featureGroup();
+            map.addLayer(categoryHighlightLayers); // Añadir al mapa, inicialmente estará vacío
+
+            // MODIFICACIÓN CLAVE: Asignar color por categoría
+            function style_temp4_2_0(feature) {
+                let fillColor = 'rgba(232,113,141,1.0)'; // Color por defecto si no hay categoría o no coincide
+
+                if (feature.properties && feature.properties['Categorias']) {
+                    switch (feature.properties['Categorias']) {
+                        case 'Educación':
+                            fillColor = 'rgba(56,128,199,1.0)'; // Azul
+                            break;
+                        case 'Salud':
+                            fillColor = 'rgba(255,0,0,1.0)'; // Rojo
+                            break;
+                        case 'Medio Ambiente':
+                            fillColor = 'rgba(0,128,0,1.0)'; // Verde
+                            break;
+                        case 'Comunidad':
+                            fillColor = 'rgba(255,165,0,1.0)'; // Naranja
+                            break;
+                        // **¡AÑADE TUS PROPIAS CATEGORÍAS Y COLORES AQUÍ!**
+                        // Asegúrate de que los nombres de las categorías coincidan EXACTAMENTE
+                        // con los valores en tu archivo data/temp4_2.js
+                        //
+                        // Ejemplo:
+                        // case 'Investigación':
+                        //     fillColor = 'rgba(150,50,200,1.0)'; // Púrpura
+                        //     break;
+                        // case 'Desarrollo Urbano':
+                        //     fillColor = '#800080'; // Otro púrpura (hexadecimal)
+                        //     break;
+                        default:
+                            fillColor = 'rgba(128,0,128,1.0)'; // Púrpura para otras categorías no especificadas
+                            break;
+                    }
                 }
 
-                let highlightLayer;
-                let highlightedSearchLayers = []; // Almacena las capas resaltadas por el buscador
+                return {
+                    pane: 'pane_temp4_2',
+                    radius: 4.0,
+                    opacity: 1,
+                    color: 'rgba(35,35,35,1.0)',
+                    dashArray: '',
+                    lineCap: 'butt',
+                    lineJoin: 'miter',
+                    weight: 1,
+                    fill: true,
+                    fillOpacity: 1,
+                    fillColor: fillColor, // Usar el color determinado por la categoría
+                    interactive: true,
+                };
+            }
 
-                function highlightFeature(e) {
-                    // Primero, limpia cualquier resaltado manual (mouseover)
-                    if (highlightLayer && highlightLayer.defaultOptions && highlightLayer.defaultOptions.style) {
-                        highlightLayer.setStyle(highlightLayer.defaultOptions.style);
-                    }
-
-                    highlightLayer = e.target;
-                    highlightLayer.defaultOptions = highlightLayer.defaultOptions || {};
-                    highlightLayer.defaultOptions.style = JSON.parse(JSON.stringify(highlightLayer.options));
-
-                    // Si la característica es una línea, resalta diferente
-                    if (e.target.feature.geometry.type === 'LineString') {
-                        highlightLayer.setStyle({
-                            color: '#ffff00', // Amarillo
-                            weight: 4
+            function highlightFeature(e) {
+                var layer = e.target;
+                // Solo aplicar el resaltado al pasar el mouse si no está ya resaltado por búsqueda de categoría
+                if (!categoryHighlightLayers.hasLayer(layer)) {
+                    if (layer.feature.geometry.type === 'LineString') {
+                        layer.setStyle({
+                            color: '#ffff00',
                         });
-                    } else { // Asumimos que es un punto (CircleMarker)
-                        highlightLayer.setStyle({
-                            fillColor: '#ffff00', // Amarillo
-                            fillOpacity: 1,
-                            radius: 10
-                        });
-                    }
-
-                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                        highlightLayer.bringToFront();
-                    }
-                }
-
-                function resetHighlight(e) {
-                    if (e.target.defaultOptions && e.target.defaultOptions.style) {
-                        e.target.setStyle(e.target.defaultOptions.style);
                     } else {
-                        // Si no hay defaultOptions guardados, usa la función de estilo original
-                        e.target.setStyle(style_union_2_0(e.target.feature));
-                    }
-                    highlightLayer = null;
-                }
-
-                // Función para limpiar todos los resaltados de búsqueda
-                function clearSearchHighlights() {
-                    if (highlightedSearchLayers.length > 0) {
-                        console.log("Limpiando resaltados de búsqueda...");
-                        highlightedSearchLayers.forEach(function(layer) {
-                            if (layer.defaultOptions && layer.defaultOptions.style) {
-                                layer.setStyle(layer.defaultOptions.style);
-                            } else {
-                                // Restaurar el estilo original basado en la categoría
-                                layer.setStyle(style_union_2_0(layer.feature));
-                            }
+                        layer.setStyle({
+                            fillColor: '#ffff00',
+                            fillOpacity: 1
                         });
-                        highlightedSearchLayers = []; // Vaciar el array
                     }
                 }
+            }
 
-
-                var map = L.map('map', {
-                    zoomControl:true, maxZoom:28, minZoom:1
-                });
-
-                var hash = new L.Hash(map);
-                map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
-                var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-
-                function removeEmptyRowsFromPopupContent(content, feature) {
-                   var tempDiv = document.createElement('div');
-                   tempDiv.innerHTML = content;
-                   var rows = tempDiv.querySelectorAll('tr');
-                   for (var i = 0; i < rows.length; i++) {
-                       var td = rows[i].querySelector('td.visible-with-data');
-                       var key = td ? td.id : '';
-                       if (td && td.classList.contains('visible-with-data') && (feature.properties[key] == null || feature.properties[key] === '')) {
-                           rows[i].parentNode.removeChild(rows[i]);
-                       }
-                   }
-                   return tempDiv.innerHTML;
+            function resetHighlight(e) {
+                var layer = e.target;
+                // Solo restablecer si no está resaltado por búsqueda de categoría
+                if (!categoryHighlightLayers.hasLayer(layer)) {
+                        // Restablecer el estilo al original basado en las propiedades de la característica
+                        layer_temp4_2.resetStyle(layer);
                 }
+            }
 
-                document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
-                  var tagName = event.target.tagName,
-                    popup = map._popup;
-                  if (tagName === "IMG" && popup && !popup._updated) {
-                    popup._updated = true;
-                    popup.update();
-                  }
-                }, true);
+            // Función personalizada para aplicar resaltado para la búsqueda de categoría
+            function highlightCategoryPoints(category) {
+                // Borrar cualquier punto de categoría previamente resaltado
+                clearCategoryHighlights(); // Usar la función de limpieza existente
 
-                var bounds_group = new L.featureGroup([]);
-                
-                function setBounds() {
-                    if (bounds_group.getLayers().length > 0) {
-                        map.fitBounds(bounds_group.getBounds());
-                    } else {
-                        console.warn("No hay capas en bounds_group para establecer los límites del mapa.");
-                    }
-                }
-
-                map.createPane('pane_EsriSatellite_0');
-                map.getPane('pane_EsriSatellite_0').style.zIndex = 400;
-                var layer_EsriSatellite_0 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    pane: 'pane_EsriSatellite_0',
-                    opacity: 1.0,
-                    attribution: 'Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-                    minZoom: 1,
-                    maxZoom: 28,
-                    minNativeZoom: 0,
-                    maxNativeZoom: 17
-                });
-                map.addLayer(layer_EsriSatellite_0);
-
-                map.createPane('pane_OpenStreetMap_1');
-                map.getPane('pane_OpenStreetMap_1').style.zIndex = 401;
-                var layer_OpenStreetMap_1 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    pane: 'pane_OpenStreetMap_1',
-                    opacity: 1.0,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    minZoom: 1,
-                    maxZoom: 28,
-                    minNativeZoom: 0,
-                    maxNativeZoom: 19
-                });
-
-                function pop_union_2(feature, layer) {
-                    layer.on({
-                        mouseout: resetHighlight,
-                        mouseover: highlightFeature,
-                        click: function(e) {
-                            clearSearchHighlights();
-                            // Puedes añadir aquí lógica específica al hacer clic si lo necesitas
-                        }
-                    });
-                    var popupContent = '<table>\
-                        <tr>\
-                            <th scope="row">Categoría:</th>\
-                            <td class="visible-with-data" id="Name">' + (feature.properties ['Name'] !== null ? autolinker.link(feature.properties ['Name'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                        <tr>\
-                            <th scope="row">Descripción:</th>\
-                            <td class="visible-with-data" id="descriptio">' + (feature.properties ['descriptio'] !== null ? autolinker.link(feature.properties ['descriptio'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                        <tr>\
-                            <th scope="row">Academicos:</th>\
-                            <td class="visible-with-data" id="Academicos">' + (feature.properties ['Academicos'] !== null ? autolinker.link(feature.properties ['Academicos'].toLocaleString()) : '') + '</td>\
-                        </tr>\
-                    </table>';
-                    layer.bindPopup(popupContent, {maxHeight: 400});
-                    var popup = layer.getPopup();
-                    var content = popup.getContent();
-                    var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
-                    popup.setContent(updatedContent);
-                }
-
-                // FUNCIÓN getColor ACTUALIZADA CON COLORES POR CATEGORÍA
-                function getColor(nombre) {
-                    const nameLower = String(nombre).toLowerCase();
-
-                    if (nameLower.includes('monitoreo o muestreo de la especie')) {
-                        return '#FF6347'; // Rojo tomate
-                    } else if (nameLower.includes('iniciativas de educación y difusión')) {
-                        return '#32CD32'; // Verde lima
-                    } else if (nameLower.includes('relevamiento de informacion sobre relacion guigna-humanos')) {
-                        return '#4169E1'; // Azul real
-                    } else if (nameLower.includes('reducción o mitigación de amenazas')) {
-                        return '#FFA500'; // Naranja
-                    }
-                    // AÑADE MÁS CATEGORÍAS AQUÍ (asegúrate de que coincidan con tus datos)
-                    else if (nameLower.includes('investigación de ecología y comportamiento')) {
-                        return '#8A2BE2'; // Azul violeta
-                    } else if (nameLower.includes('creación de áreas protegidas')) {
-                        return '#20B2AA'; // Verde mar claro
-                    } else if (nameLower.includes('trabajo con comunidades locales')) {
-                        return '#DC143C'; // Rojo carmesí
-                    } else if (nameLower.includes('restauración de hábitat')) {
-                        return '#DAA520'; // Dorado
-                    }
-                    // Color por defecto si no se encuentra coincidencia
-                    return '#808080'; // Gris por defecto
-                }
-
-                function style_union_2_0(feature) {
-                    return {
-                        pane: 'pane_union_2',
-                        radius: 8.0,
-                        opacity: 1,
-                        color: 'rgba(35,35,35,1.0)', // Borde de los puntos
-                        dashArray: '',
-                        lineCap: 'butt',
-                        lineJoin: 'miter',
-                        weight: 1,
-                        fill: true,
-                        fillOpacity: 1,
-                        fillColor: getColor(feature.properties['Name']), // Color de relleno según la categoría
-                        interactive: true,
-                    }
-                }
-
-                map.createPane('pane_union_2');
-                map.getPane('pane_union_2').style.zIndex = 402;
-                map.getPane('pane_union_2').style['mix-blend-mode'] = 'normal';
-
-                // INTENTO DE CARGA SEGURA DEL JSON
-                var layer_union_2;
-                try {
-                    if (typeof json_union_2 === 'undefined') {
-                        throw new Error("La variable 'json_union_2' no está definida. Asegúrate de que 'data/union_2.js' se cargue correctamente y contenga 'var json_union_2 = {...};'.");
-                    }
-                    layer_union_2 = new L.geoJson(json_union_2, {
-                        attribution: 'Datos de Iniciativas',
-                        interactive: true,
-                        dataVar: 'json_union_2', // Esto es una convención, no una propiedad real de L.geoJson
-                        layerName: 'layer_union_2', // Esto es una convención
-                        pane: 'pane_union_2',
-                        onEachFeature: pop_union_2,
-                        pointToLayer: function (feature, latlng) {
-                            var context = {
-                                feature: feature,
-                                variables: {}
-                            };
-                            return L.circleMarker(latlng, style_union_2_0(feature));
-                        },
-                    });
-                    bounds_group.addLayer(layer_union_2);
-                    map.addLayer(layer_union_2);
-                    console.log("Capa 'Iniciativas' cargada con éxito.");
-
-                } catch (error) {
-                    console.error("Error al cargar la capa 'union_2':", error);
-                    alert("No se pudieron cargar los datos de iniciativas. Por favor, revisa el archivo 'data/union_2.js'.");
-                }
-
-
-                var baseMaps = {
-                    "Esri Satellite": layer_EsriSatellite_0,
-                    "OpenStreetMap": layer_OpenStreetMap_1
-                };
-
-                var overlayMaps = {
-                    "Iniciativas": layer_union_2 // Asegúrate de que layer_union_2 esté definido
-                };
-
-                L.control.layers(baseMaps, overlayMaps, {
-                    collapsed: false
-                }).addTo(map);
-
-                map.on('overlayadd', function(eventLayer) {
-                    if (eventLayer.layer === layer_union_2) {
-                        setBounds();
-                    }
-                });
-                setBounds(); // Llama a setBounds al inicio para ajustar el zoom a las capas
-
-                // --- INICIO CÓDIGO DEL BUSCADOR POR CATEGORÍA CON RESALTADO ---
-                var searchControl = new L.Control.Search({
-                    layer: layer_union_2, // DEBE SER LA CAPA DE DATOS REAL
-                    initial: false,
-                    hideMarkerOnCollapse: true,
-                    propertyName: 'Name', // Buscar por la propiedad 'Name' (Categoría)
-                    zoom: 16,
-                    marker: false,
-                    textPlaceholder: 'Buscar por Categoría...'
-                });
-                map.addControl(searchControl);
-
-                // Asegúrate de que el botón de búsqueda exista antes de intentar añadirle una clase
-                const searchButton = document.getElementsByClassName('search-button')[0];
-                if (searchButton) {
-                    searchButton.className += ' fa fa-binoculars';
-                } else {
-                    console.warn("Elemento 'search-button' no encontrado. El ícono podría no mostrarse.");
-                }
-
-
-                searchControl.on('search:locationfound', function(e) {
-                    clearSearchHighlights();
-
-                    if (e.layer) {
-                        var searchedCategory = e.text;
-
-                        var matchingLayers = [];
-                        layer_union_2.eachLayer(function(layer) {
-                            if (layer.feature && layer.feature.properties && layer.feature.properties.Name) {
-                                if (String(layer.feature.properties.Name).toLowerCase() === searchedCategory.toLowerCase()) {
-                                    matchingLayers.push(layer);
-                                }
-                            }
+                layer_temp4_2.eachLayer(function(layer) {
+                    if (layer.feature.properties && layer.feature.properties['Categorias'] === category) {
+                        layer.setStyle({
+                            fillColor: '#ffff00', // Resaltado amarillo
+                            fillOpacity: 1
                         });
-
-                        if (matchingLayers.length > 0) {
-                            var group = new L.featureGroup(matchingLayers);
-                            map.fitBounds(group.getBounds(), { padding: [50, 50] });
-
-                            matchingLayers.forEach(function(layer) {
-                                layer.defaultOptions = layer.defaultOptions || {};
-                                layer.defaultOptions.style = JSON.parse(JSON.stringify(layer.options));
-
-                                layer.setStyle({
-                                    fillColor: 'yellow',
-                                    opacity: 1,
-                                    color: 'black',
-                                    weight: 2,
-                                    radius: 10
-                                });
-                                highlightedSearchLayers.push(layer);
-                            });
-
-                        } else {
-                            alert('No se encontraron iniciativas de la categoría "' + searchedCategory + '".');
-                        }
+                        categoryHighlightLayers.addLayer(layer); // Añadir al grupo de capas resaltadas
                     }
                 });
+            }
 
-                searchControl.on('search:cancel', function() {
-                    clearSearchHighlights();
+            // Función para borrar todos los resaltados de categoría
+            function clearCategoryHighlights() {
+                categoryHighlightLayers.eachLayer(function(layer) {
+                    layer_temp4_2.resetStyle(layer); // Restablecer al estilo original
                 });
-                searchControl.on('search:collapsed', function() {
-                    if (searchControl._lastSearchText === "" && highlightedSearchLayers.length > 0) {
-                        clearSearchHighlights();
+                categoryHighlightLayers.clearLayers();
+            }
+
+
+            var hash = new L.Hash(map);
+            map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+            var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+            function removeEmptyRowsFromPopupContent(content, feature) {
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = content;
+                var rows = tempDiv.querySelectorAll('tr');
+                for (var i = 0; i < rows.length; i++) {
+                    var td = rows[i].querySelector('td.visible-with-data');
+                    var key = td ? td.id : '';
+                    if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                        rows[i].parentNode.removeChild(rows[i]);
                     }
+                }
+                return tempDiv.innerHTML;
+            }
+            document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
+            var tagName = event.target.tagName,
+                popup = map._popup;
+            // Also check if flag is already set.
+            if (tagName === "IMG" && popup && !popup._updated) {
+                popup._updated = true; // Set flag to prevent looping.
+                popup.update();
+            }
+            }, true);
+            var bounds_group = new L.featureGroup([]);
+            function setBounds() {
+            }
+            map.createPane('pane_OpenStreetMap_0');
+            map.getPane('pane_OpenStreetMap_0').style.zIndex = 400;
+            var layer_OpenStreetMap_0 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                pane: 'pane_OpenStreetMap_0',
+                opacity: 1.0,
+                attribution: '',
+                minZoom: 1,
+                maxZoom: 28,
+                minNativeZoom: 0,
+                maxNativeZoom: 19
+            });
+            layer_OpenStreetMap_0;
+            map.addLayer(layer_OpenStreetMap_0);
+            map.createPane('pane_GoogleSatellite_1');
+            map.getPane('pane_GoogleSatellite_1').style.zIndex = 401;
+            var layer_GoogleSatellite_1 = L.tileLayer('http://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                pane: 'pane_GoogleSatellite_1',
+                opacity: 1.0,
+                attribution: '',
+                minZoom: 1,
+                maxZoom: 28,
+                minNativeZoom: 0,
+                maxNativeZoom: 22
+            });
+            layer_GoogleSatellite_1;
+            map.addLayer(layer_GoogleSatellite_1);
+            function pop_temp4_2(feature, layer) {
+                layer.on({
+                    mouseout: function(e) {
+                        resetHighlight(e); // Usar la nueva función resetHighlight
+                    },
+                    mouseover: highlightFeature,
+                    click: function(e) { // Añadir un manejador de clic para evitar borrar al hacer clic en una característica
+                        e.originalEvent._clickedFeature = true; // Establecer una bandera
+                    },
                 });
-                // --- FIN CÓDIGO DEL BUSCADOR POR CATEGORÍA CON RESALTADO ---
 
-                // --- INICIO: CÓDIGO PARA LIMPIAR AL HACER CLIC EN EL MAPA ---
-                map.on('click', function(e) {
-                    if (!(e.originalEvent.target instanceof SVGElement) && highlightedSearchLayers.length > 0) {
-                        clearSearchHighlights();
-                    }
-                });
-                // --- FIN: CÓDIGO PARA LIMPIAR AL HACER CLIC EN EL MAPA ---
+                let descripcionTexto = feature.properties['Descrip.'] !== null ? feature.properties['Descrip.'].toLocaleString() : '';
 
+                // Lógica personalizada de reemplazo de texto
+                const parteClaveTextoOriginal = 'Operativo Veterinario de mascotas c. Vacunación: A partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas.';
+                const nuevoTexto = 'Operativo Veterinario de mascotas\n\nc. Vacunación:\n\nA partir de los fondos disponibles de la Sebsecretaría de Desarrollo Regional (SUBDERE) para la vacunación y esterilización de mascotas, Guardaparques del Parque Nacional Radal Siete Tazas gestionan la posibilidad de otorgar a la localidad de Radal, como una zona prioritaria para implementar este programa en la comunda de Molina. Para ello, Guardaparques gestionan con la Dirección de Desarrollo Comunal de Molina (DIDECO) el operativo veterinario en Radal y colaboran en la coordinación den terreno a través de la Junta de vecinos. En total se abordaron más de 30 mascotas, aunque en su gran mayoría fueron perros, teniendo muchos problemas para la vacunación de gatos debido a la dificultad de sus dueños para manipularlos. Fecha: 2019.';
 
-                // --- CÓDIGO PARA LA LEYENDA PERSONALIZADA ---
-                var legend = L.control({position: 'bottomright'});
+                if (descripcionTexto.includes(parteClaveTextoOriginal)) {
+                    descripcionTexto = nuevoTexto;
+                }
 
-                legend.onAdd = function (map) {
-                    var div = L.DomUtil.create('div', 'info legend');
-                    div.innerHTML += '<div class="legend-title">Categorías</div>';
+                // Contenido del popup
+                var popupContent = '<table>\
+                                    <tr>\
+                                        <th scope="row">Categorías:</th>\
+                                        <td data-property="Categorias">' + (feature.properties['Categorias'] !== null ? autolinker.link(feature.properties['Categorias'].toLocaleString()) : '') + '</td>\
+                                    </tr>\
+                                    <tr>\
+                                        <th scope="row">Descripción:</th>\
+                                        <td data-property="Descrip.">' + autolinker.link(descripcionTexto) + '</td>\
+                                    </tr>\
+                                    <tr>\
+                                        <th scope="row">Academicos:</th>\
+                                        <td data-property="Academicos">' + (feature.properties['Academicos'] !== null ? autolinker.link(feature.properties['Academicos'].toLocaleString()) : '') + '</td>\
+                                    </tr>\
+                                    </table>';
 
-                    // CATEGORÍAS ACTUALIZADAS PARA LA LEYENDA (DEBEN COINCIDIR CON getColor)
-                    var categories = [
-                        { name: 'Monitoreo o muestreo de la especie', color: '#FF6347' },
-                        { name: 'Iniciativas de Educación y difusión', color: '#32CD32' },
-                        { name: 'Relevamiento de información sobre relación güiña-humanos', color: '#4169E1' },
-                        { name: 'Reducción o mitigación de amenazas', color: '#FFA500' },
-                        { name: 'Investigación de ecología y comportamiento', color: '#8A2BE2' },
-                        { name: 'Creación de áreas protegidas', color: '#20B2AA' },
-                        { name: 'Trabajo con comunidades locales', color: '#DC143C' },
-                        { name: 'Restauración de hábitat', color: '#DAA520' },
-                        { name: 'Otras', color: '#808080' } // Categoría por defecto
-                    ];
+                layer.bindPopup(popupContent, {maxHeight: 400});
 
-                    for (var i = 0; i < categories.length; i++) {
-                        div.innerHTML +=
-                            '<div class="legend-item">' +
-                                '<span class="legend-symbol" style="background:' + categories[i].color + '; border: 1px solid rgba(35,35,35,0.8);"></span>' +
-                                '<span>' + categories[i].name + '</span>' +
-                            '</div>';
-                    }
-                    return div;
-                };
-                legend.addTo(map);
-                // --- FIN DEL CÓDIGO DE LEYENDA ---
+                var popup = layer.getPopup();
+                var content = popup.getContent();
+                var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+                popup.setContent(updatedContent);
+            }
 
-                // --- CÓDIGO PARA MOSTRAR COORDENADAS DEL CURSOR (LAT/LNG y UTM) ---
-
-                // Función de conversión Lat/Lng a UTM (simplificada para Zona 19S, Hemisferio Sur)
-                function latLonToUtm(lat, lon) {
-                    const a = 6378137.0; // Radio mayor del elipsoide WGS84
-                    const f = 1 / 298.257223563; // Achatamiento del elipsoide WGS84
-                    const k0 = 0.9996; // Factor de escala en el meridiano central
-                    const E2 = 2 * f - f * f; // Excentricidad al cuadrado
-                    const E4 = E2 * E2;
-                    const E6 = E4 * E2;
-                    const N0 = 10000000.0; // Falso Northing para el hemisferio sur (ajustar si es hemisferio norte)
-
-                    const latRad = lat * Math.PI / 180;
-                    const lonRad = lon * Math.PI / 180;
-
-                    const zoneNum = Math.floor((lon + 180) / 6) + 1;
-                    const lonOriginRad = (zoneNum * 6 - 183) * Math.PI / 180;
-
-                    const deltaLon = lonRad - lonOriginRad;
-
-                    const sinLat = Math.sin(latRad);
-                    const cosLat = Math.cos(latRad);
-                    const tanLat = Math.tan(latRad);
-
-                    const Nu = a / Math.sqrt(1 - E2 * sinLat * sinLat);
-                    const Rho = a * (1 - E2) / Math.pow(1 - E2 * sinLat * sinLat, 1.5);
-                    const K1 = Nu * cosLat * cosLat / 2;
-                    const K2 = Nu * cosLat * cosLat * cosLat * cosLat / 24 * (5 - tanLat * tanLat + 9 * E2 * cosLat * cosLat);
-                    // K3 y K4 son para cálculos de Easting y Northing, no para K1 y K2 directamente
-                    // const K3 = Nu * cosLat;
-                    // const K4 = Nu * cosLat * cosLat * cosLat / 6 * (1 - tanLat * tanLat);
-
-                    const T = tanLat * tanLat;
-                    const C = E2 * cosLat * cosLat / (1 - E2);
-                    // const A = (lonRad - lonOriginRad) * cosLat; // 'A' no se usa directamente en esta formulación simplificada
-
-                    const M = a * ((1 - E2 / 4 - 3 * E4 / 64 - 5 * E6 / 256) * latRad -
-                                   (3 * E2 / 8 + 3 * E4 / 32 + 45 * E6 / 1024) * sinLat * cosLat +
-                                   (15 * E4 / 256 + 45 * E6 / 1024) * sinLat * Math.pow(cosLat, 3) -
-                                   (35 * E6 / 3072) * sinLat * Math.pow(cosLat, 5));
-
-                    const easting = k0 * Nu * (deltaLon + Math.pow(deltaLon, 3) * (1 - T + C) / 6 + Math.pow(deltaLon, 5) * (5 - 18 * T + T * T + 72 * C - 58 * E2) / 120) + 500000;
-                    let northing = k0 * (M + Nu * tanLat * (Math.pow(deltaLon, 2) / 2 + Math.pow(deltaLon, 4) * (5 - T + 9 * C + 4 * C * C) / 24 + Math.pow(deltaLon, 6) * (61 - 58 * T + T * T + 600 * C - 330 * E2) / 720));
-
-                    if (lat < 0) { // Hemisferio Sur
-                        northing = N0 + northing; // Suma Falso Northing solo si es Hemisferio Sur
-                    }
-
-                    return {
-                        easting: Math.round(easting),
-                        northing: Math.round(northing),
-                        zone: zoneNum,
-                        hemisphere: (lat >= 0) ? 'N' : 'S'
+            map.createPane('pane_temp4_2');
+            map.getPane('pane_temp4_2').style.zIndex = 402;
+            map.getPane('pane_temp4_2').style['mix-blend-mode'] = 'normal';
+            var layer_temp4_2 = new L.geoJson(json_temp4_2, {
+                attribution: '',
+                interactive: true,
+                dataVar: 'json_temp4_2',
+                layerName: 'layer_temp4_2',
+                pane: 'pane_temp4_2',
+                onEachFeature: pop_temp4_2,
+                pointToLayer: function (feature, latlng) {
+                    var context = {
+                        feature: feature,
+                        variables: {}
                     };
+                    // Aquí es donde se aplica el estilo que asigna colores por categoría
+                    return L.circleMarker(latlng, style_temp4_2_0(feature));
+                },
+            });
+            bounds_group.addLayer(layer_temp4_2);
+            map.addLayer(layer_temp4_2);
+
+            var baseMaps = {
+                "OpenStreetMap": layer_OpenStreetMap_0,
+                "Google Satellite": layer_GoogleSatellite_1
+            };
+            L.control.layers(baseMaps,{'<img src="legend/temp4_2.png" /> Actividades grupo': layer_temp4_2},{collapsed:false}).addTo(map);
+
+            setBounds();
+
+            // Configuración del control de búsqueda por categoría
+            var searchControl = new L.Control.Search({
+                layer: layer_temp4_2,
+                initial: false,
+                hideMarkerOnCollapse: true,
+                propertyName: 'Categorias'
+            });
+            map.addControl(searchControl);
+
+            // Escuchar el evento 'search:locationfound'
+            searchControl.on('search:locationfound', function(e) {
+                highlightCategoryPoints(e.text); // Resaltar todos los puntos de la categoría buscada
+                e.layer.openPopup(); // Abrir el popup para la característica específica encontrada
+                // Si quieres evitar que el mapa se acerque a la característica encontrada, descomenta la siguiente línea:
+                // e.preventDefault();
+            });
+
+            // Escuchar el evento 'search:collapsed' para borrar los resaltados si la barra de búsqueda se colapsa
+            searchControl.on('search:collapsed', function() {
+                // Solo borrar si no hay un marcador activo (lo que significa una búsqueda por categoría, no una selección de una sola característica)
+                if (!searchControl._marker) {
+                        clearCategoryHighlights();
                 }
+            });
 
-                var coordDisplay = document.getElementById('coord-display');
+            document.getElementsByClassName('search-button')[0].className +=
+                ' fa fa-binoculars';
 
-                map.on('mousemove', function(e) {
-                    var lat = e.latlng.lat.toFixed(6);
-                    var lon = e.latlng.lng.toFixed(6);
+            // --- Función de Conversión Lat/Lon a UTM ---
+            /**
+             * Función de Conversión Lat/Lon a UTM para Zona 18 Sur (WGS84)
+             * Esta función implementa la proyección de coordenadas geográficas (Latitud, Longitud)
+             * a coordenadas UTM (Este, Norte) para la Zona 18 Sur (WGS84).
+             *
+             * @param {number} lat - Latitud en grados decimales.
+             * @param {number} lon - Longitud en grados decimales.
+             * @returns {object} Un objeto con las propiedades easting, northing, zone, y hemisphere.
+             */
+            function latLonToUtm18S(lat, lon) {
+                // Constantes del elipsoide WGS84
+                const a = 6378137.0; // Semieje mayor
+                const f = 1 / 298.257223563; // Aplanamiento
+                const k0 = 0.9996; // Factor de escala central del meridiano
 
-                    // Asegúrate de que los valores de lat y lon sean válidos antes de convertir
-                    if (!isNaN(e.latlng.lat) && !isNaN(e.latlng.lng)) {
-                        var utmCoords = latLonToUtm(e.latlng.lat, e.latlng.lng);
-                        let hemisphereDisplay = (e.latlng.lat >= 0) ? 'N' : 'S';
+                // Falso Este y Falso Norte (para Hemisferio Sur)
+                const FE = 500000;
+                const FN = 10000000;
 
-                        coordDisplay.innerHTML = `
-                            Lat/Lng: ${lat}, ${lon}<br>
-                            UTM: E: ${utmCoords.easting} N: ${utmCoords.northing} (Zona: ${utmCoords.zone}${hemisphereDisplay})
-                        `;
-                    } else {
-                        coordDisplay.innerHTML = `Lat/Lng: Inválido<br>UTM: Inválido`;
-                    }
-                });
-                // --- FIN CÓDIGO PARA MOSTRAR COORDENADAS DEL CURSOR ---
+                // Zona UTM y Meridiano Central para 18S
+                const zoneNumber = 18;
+                const centralMeridianRad = (-75) * (Math.PI / 180); // 18 * 6 - 183 = -75 grados Longitud para 18S
 
-            }); // FIN document.addEventListener('DOMContentLoaded')
+                // Convertir latitud y longitud a radianes
+                const latRad = lat * (Math.PI / 180);
+                const lonRad = lon * (Math.PI / 180);
+
+                // Cálculos intermedios
+                const e2 = 2 * f - f * f; // Excentricidad al cuadrado
+                const n = f / (2 - f); // n = (a - b) / (a + b)
+                const n2 = n * n;
+                const n3 = n * n2;
+                const n4 = n * n3;
+
+                const cosLat = Math.cos(latRad);
+                const sinLat = Math.sin(latRad);
+                const tanLat = Math.tan(latRad);
+                const v = a * k0 / Math.sqrt(1 - e2 * sinLat * sinLat); // Radio de curvatura en la normal principal
+                const p = (lonRad - centralMeridianRad); // Diferencia de longitud angular desde el meridiano central
+
+                // Coeficientes para la serie del arco de meridiano
+                const A0 = 1 - n + (5/4) * (n2 - n3) + (81/64) * (n4);
+                const A1 = (3/2) * (n - n2) + (21/16) * (n3 - n4);
+                const A2 = (15/16) * (n2 - n3) + (55/32) * (n4);
+                const A3 = (35/48) * (n3 - n4);
+                const A4 = (315/512) * (n4);
+
+                const M = a * k0 * (A0 * latRad - A1 * Math.sin(2 * latRad) + A2 * Math.sin(4 * latRad) - A3 * Math.sin(6 * latRad) + A4 * Math.sin(8 * latRad));
+
+                const T = tanLat * tanLat;
+                const C = e2 * cosLat * cosLat / (1 - e2); // C = (e')^2 * cos^2(lat)
+                const N = v; // Es la misma 'v' de arriba, pero a veces se le llama N
+
+                // Cálculo del Easting (E) y Northing (N)
+                const E = FE + N * p * cosLat * (1 + (p * p * cosLat * cosLat / 6) * (1 - T + C + (p * p * cosLat * cosLat / 20) * (5 - 18 * T + T * T + 72 * C - 58 * e2)));
+                const N_calc = FN + M + N * sinLat * cosLat * (p * p / 2 + (p * p * p * p / 24) * (5 - T + 9 * C + 4 * C * C) + (p * p * p * p * p * p / 720) * (61 - 58 * T + T * T + 600 * C - 330 * e2));
+
+                return {
+                    easting: E,
+                    northing: N_calc,
+                    zone: zoneNumber,
+                    hemisphere: 'S' // O 'N'
+                };
+            }
+            // --- FIN: Función de Conversión UTM ---
+
+            // --- START: Visor de Coordenadas Lat/Lon en tiempo real ---
+
+            // 1. Crear un control personalizado de Leaflet para mostrar Lat/Lon y UTM
+            L.Control.LatLonCoordinates = L.Control.extend({
+                onAdd: function(map) {
+                    this._div = L.DomUtil.create('div', 'leaflet-control-latlon-coordinates');
+                    this._div.innerHTML = 'Lat: --.--, Lon: --.--<br>UTM E: --.--, N: --.-- (18S)'; // Visualización inicial
+                    return this._div;
+                },
+                onRemove: function(map) {
+                    // Nada específico que hacer al remover
+                },
+                updateCoordinates: function(lat, lng) {
+                    const utm = latLonToUtm18S(lat, lng); // Llamar a la función de conversión UTM corregida
+
+                    const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
+                    const utmText = `UTM E: ${utm.easting.toFixed(2)}, N: ${utm.northing.toFixed(2)} (${utm.zone}${utm.hemisphere})`;
+                    this._div.innerHTML = `${latLonText}<br>${utmText}`;
+                }
+            });
+
+            // Función de fábrica para el control de visualización de Lat/Lon
+            L.control.latLonCoordinates = function(opts) {
+                return new L.Control.LatLonCoordinates(opts);
+            }
+
+            // 2. Añadir el control de visualización de Lat/Lon al mapa en la posición inferior izquierda
+            const latLonControl = L.control.latLonCoordinates({ position: 'bottomleft' }).addTo(map);
+
+            // 3. Actualizar las coordenadas Lat/Lon en tiempo real a medida que el mouse se mueve sobre el mapa
+            map.on('mousemove', function(e) {
+                latLonControl.updateCoordinates(e.latlng.lat, e.latlng.lng);
+            });
+
+            // --- FIN: Visor de Coordenadas Lat/Lon en tiempo real ---
+
+
+            // --- START: Buscador de Coordenadas Lat/Lon (con 6 decimales y eliminación de marcador al cerrar popup) ---
+            let searchMarker; // Para almacenar el marcador colocado por la búsqueda
+
+            L.Control.CoordSearch = L.Control.extend({
+                onAdd: function(map) {
+                    var container = L.DomUtil.create('div', 'leaflet-control-coord-search');
+                    L.DomEvent.disableClickPropagation(container); // Evita que los clics se propaguen al mapa
+
+                    container.innerHTML = `
+                        <div>
+                            <input type="text" id="coordInput" placeholder="Latitud, Longitud (ej: -33.456789, -70.665432)">
+                        </div>
+                        <button id="searchCoordBtn">Buscar</button>
+                    `;
+
+                    var coordInput = container.querySelector('#coordInput');
+                    var searchBtn = container.querySelector('#searchCoordBtn');
+
+                    searchBtn.onclick = function() {
+                        var inputString = coordInput.value.trim();
+                        var parts = inputString.split(',').map(part => parseFloat(part.trim()));
+
+                        // Validar si se analizaron exactamente dos números
+                        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+                            alert('Por favor, introduce las coordenadas en el formato "Latitud, Longitud" (ej: -33.456789, -70.665432).');
+                            return;
+                        }
+
+                        var lat = parts[0];
+                        var lon = parts[1];
+
+                        // Validar entradas: verificar que sean números válidos y dentro del rango
+                        if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                            alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
+                            return;
+                        }
+
+                        var newLatLng = L.latLng(lat, lon);
+                        map.setView(newLatLng, 15); // Panear y hacer zoom a la nueva ubicación (puedes ajustar el nivel de zoom)
+
+                        // Eliminar marcador existente si lo hay
+                        if (searchMarker) {
+                            map.removeLayer(searchMarker);
+                        }
+
+                        // Añadir un nuevo marcador en la ubicación buscada
+                        searchMarker = L.marker(newLatLng).addTo(map)
+                            .bindPopup(`<b>Coordenadas buscadas:</b><br>Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`)
+                            .openPopup();
+
+                        // Añadir un listener de evento para el cierre del popup del marcador
+                        // Cuando el popup se cierra, eliminar el marcador del mapa
+                        searchMarker.on('popupclose', function() {
+                            map.removeLayer(searchMarker);
+                            searchMarker = null; // Limpiar la referencia
+                        });
+                    };
+
+                    return container;
+                }
+            });
+
+            L.control.coordSearch = function(opts) {
+                return new L.Control.CoordSearch(opts);
+            }
+
+            // Añadir el control de búsqueda de coordenadas al mapa (ej. arriba a la derecha)
+            L.control.coordSearch({ position: 'topright' }).addTo(map);
+
+            // --- FIN: Buscador de Coordenadas Lat/Lon ---
+
+            // NUEVO: Borrar resaltados de categoría al hacer clic en cualquier parte del mapa (fuera de una característica)
+            map.on('click', function(e) {
+                if (!e.originalEvent._clickedFeature) { // Verificar si la bandera no fue establecida por un clic de característica
+                    clearCategoryHighlights();
+                }
+                delete e.originalEvent._clickedFeature; // Limpiar la bandera
+            });
+
+        }); // FIN: DOMContentLoaded
         </script>
     </body>
 </html>
