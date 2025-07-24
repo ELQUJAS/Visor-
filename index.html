@@ -313,16 +313,12 @@
         document.getElementsByClassName('search-button')[0].className +=
             ' fa fa-binoculars';
 
-        // --- START: UTM Conversion Function ---
-        /**
-         * Función de Conversión Lat/Lon a UTM para Zona 18 Sur (WGS84)
-         * Esta función implementa la proyección de coordenadas geográficas (Latitud, Longitud)
-         * a coordenadas UTM (Este, Norte) para la Zona 18 Sur (WGS84).
-         *
-         * @param {number} lat - Latitud en grados decimales.
-         * @param {number} lon - Longitud en grados decimales.
-         * @returns {object} Un objeto con las propiedades easting, northing, zone, y hemisphere.
-         */
+        ---
+        ## Función de Conversión Lat/Lon a UTM para Zona 18 Sur (WGS84)
+
+        Esta función implementa la proyección de coordenadas geográficas (Latitud, Longitud) a coordenadas UTM (Este, Norte) para la **Zona 18 Sur**.
+        ---
+        ```javascript
         function latLonToUtm18S(lat, lon) {
             // Constantes del elipsoide WGS84
             const a = 6378137.0; // Semieje mayor
@@ -378,8 +374,14 @@
                 hemisphere: 'S' // O 'N'
             };
         }
-        // --- END: UTM Conversion Function ---
+        ```
 
+        ---
+        ## Implementación en el Visor de Coordenadas
+
+        El resto del código se mantiene igual, con la integración de la nueva función de conversión en el control del mapa.
+        ---
+        ```javascript
         // --- START: Real-time Lat/Lon Coordinate Viewer ---
 
         // 1. Create a custom Leaflet control for Lat/Lon and UTM display
