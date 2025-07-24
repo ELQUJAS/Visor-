@@ -19,15 +19,16 @@
         /* Style for the coordinate display control */
         .leaflet-control-latlon-coordinates {
             background: rgba(255, 255, 255, 0.8);
-            padding: 5px 8px; /* Slightly more padding */
+            padding: 5px 8px;
             border-radius: 4px;
             font-family: monospace;
             font-size: 13px;
             color: #333;
             text-align: left;
-            min-width: 160px; /* Adjust as needed */
-            box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Optional: add a subtle shadow */
-            white-space: nowrap; /* Keep text on one line */
+            min-width: 280px; /* Adjusted width to accommodate UTM */
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            white-space: pre-wrap; /* Allow text to wrap for multiple lines */
+            line-height: 1.4; /* Improve readability for multiple lines */
         }
 
         /* Style for the coordinate search control */
@@ -42,7 +43,7 @@
             line-height: 1.5;
         }
         .leaflet-control-coord-search input {
-            width: 140px; /* Adjusted width for combined coordinates */
+            width: 140px;
             margin-right: 5px;
             border: 1px solid #ccc;
             padding: 3px;
@@ -312,21 +313,93 @@
         document.getElementsByClassName('search-button')[0].className +=
             ' fa fa-binoculars';
 
+        // --- START: Lat/Lon to UTM Conversion Function (for 18 South) ---
+        // This is a simplified implementation. For full accuracy and different zones,
+        // a dedicated library like 'proj4js' is recommended.
+
+        function latLonToUtm18S(lat, lon) {
+            const a = 6378137.0; // WGS84 semi-major axis
+            const f = 1 / 298.257223563; // WGS84 flattening
+            const k0 = 0.9996; // UTM scale factor
+            const FE = 500000.0; // False Easting
+            const FN = 10000000.0; // False Northing for Southern Hemisphere
+
+            // Calculate central meridian for 18S
+            const zoneNumber = 18;
+            const centralMeridian = (zoneNumber * 6) - 183; // For 18S, this is -75 degrees
+
+            const degToRad = Math.PI / 180;
+
+            const latRad = lat * degToRad;
+            const lonRad = lon * degToRad;
+            const lonOriginRad = centralMeridian * degToRad;
+
+            const n = f / (2 - f);
+            const nu = a / Math.sqrt(1 - (f * (2 - f) * Math.sin(latRad) * Math.sin(latRad)));
+            const p = lonRad - lonOriginRad;
+
+            const A = Math.cos(latRad);
+            const B = Math.pow(A, 3) * (1 - Math.tan(latRad) * Math.tan(latRad));
+            const C = Math.pow(A, 5) * (5 - 18 * Math.tan(latRad) * Math.tan(latRad) + Math.pow(Math.tan(latRad), 4) + 14 * (1 - Math.tan(latRad) * Math.tan(latRad)));
+            const D = Math.pow(A, 7) * (61 - 58 * Math.tan(latRad) * Math.tan(latRad) + Math.pow(Math.tan(latRad), 4));
+
+            const T = Math.tan(latRad) * Math.tan(latRad);
+            const C_prime = (1 - T + Math.pow(T, 2)) / 6; // N_prime for latitude series
+            const N_prime = nu / (1 - Math.pow(Math.cos(latRad), 2) * n * (1 + n)); // Simplified N_prime for different series
+
+            // Terms for Mercator Northing
+            const S1 = (a * (1 - n) * (1 - n * n)) * (latRad);
+            const S2 = (a * (1 - n) * (1 - n * n) * (3 * n / 2 - 9 * n * n / 16)) * Math.sin(2 * latRad);
+            const S3 = (a * (1 - n) * (1 - n * n) * (15 * n * n / 16)) * Math.sin(4 * latRad);
+            const S4 = (a * (1 - n) * (1 - n * n) * (35 * n * n * n / 48)) * Math.sin(6 * latRad);
+
+            const M = S1 - S2 + S3 - S4; // Corrected Arc Length on the Meridian
+
+            const E = k0 * nu * (p + (p * p * p / 6) * (1 - T + (1 / 8) * Math.pow(p, 2) * (5 - 18 * T + T * T)) ) + FE;
+            const N = k0 * (M + nu * Math.tan(latRad) * (p * p / 2 + (p * p * p * p / 24) * (5 - T + 9 * C_prime + 4 * C_prime * C_prime) ) ) + FN;
+
+
+            // More accurate series expansion for Easting (E) and Northing (N)
+            // Coefficients for the series
+            const K1 = M;
+            const K2 = nu * Math.sin(latRad) * Math.cos(latRad) / 2;
+            const K3 = nu * Math.sin(latRad) * Math.pow(Math.cos(latRad), 3) / 24 * (5 - Math.pow(Math.tan(latRad), 2) + 9 * nu * Math.pow(Math.cos(latRad), 2) / Math.pow(a, 2) + 4 * Math.pow(nu * Math.cos(latRad) / a, 4));
+            const K4 = nu * Math.sin(latRad) * Math.pow(Math.cos(latRad), 5) / 720 * (61 - 58 * Math.pow(Math.tan(latRad), 2) + Math.pow(Math.tan(latRad), 4));
+            const K5 = nu * Math.cos(latRad);
+            const K6 = nu * Math.pow(Math.cos(latRad), 3) / 6 * (1 - Math.pow(Math.tan(latRad), 2) + nu * Math.pow(Math.cos(latRad), 2) / Math.pow(a, 2));
+            const K7 = nu * Math.pow(Math.cos(latRad), 5) / 120 * (5 - 18 * Math.pow(Math.tan(latRad), 2) + Math.pow(Math.tan(latRad), 4) + 14 * nu * Math.pow(Math.cos(latRad), 2) / Math.pow(a, 2) - 58 * Math.pow(nu * Math.cos(latRad) / a, 2) * Math.pow(Math.tan(latRad), 2));
+
+            const easting = FE + k0 * K5 * p + k0 * K6 * Math.pow(p, 3) + k0 * K7 * Math.pow(p, 5);
+            const northing = k0 * (K1 + K2 * Math.pow(p, 2) + K3 * Math.pow(p, 4) + K4 * Math.pow(p, 6));
+
+            return {
+                easting: easting,
+                northing: northing,
+                zone: zoneNumber,
+                hemisphere: 'S' // Or 'N'
+            };
+        }
+        // --- END: Lat/Lon to UTM Conversion Function ---
+
+
         // --- START: Real-time Lat/Lon Coordinate Viewer ---
 
-        // 1. Create a custom Leaflet control for Lat/Lon display
+        // 1. Create a custom Leaflet control for Lat/Lon and UTM display
         L.Control.LatLonCoordinates = L.Control.extend({
             onAdd: function(map) {
                 this._div = L.DomUtil.create('div', 'leaflet-control-latlon-coordinates');
-                this._div.innerHTML = 'Lat: --.--, Lon: --.--'; // Initial display
+                this._div.innerHTML = 'Lat: --.--, Lon: --.--<br>UTM E: --.--, N: --.-- (18S)'; // Initial display
                 return this._div;
             },
             onRemove: function(map) {
                 // Nothing specific to do on removal
             },
             updateCoordinates: function(lat, lng) {
+                const utm = latLonToUtm18S(lat, lng); // Call the UTM conversion function
+
                 const latLonText = `Lat: ${lat.toFixed(6)}, Lon: ${lng.toFixed(6)}`;
-                this._div.innerHTML = latLonText;
+                const utmText = `UTM E: ${utm.easting.toFixed(2)}, N: ${utm.northing.toFixed(2)} (${utm.zone}${utm.hemisphere})`;
+                this._div.innerHTML = `${latLonText}<br>${utmText}`;
             }
         });
 
