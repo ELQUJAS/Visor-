@@ -72,23 +72,53 @@
         <script src="data/ActividadesGrupo_2.js"></script>
         <script>
         var highlightLayer;
+
+        // --- MODIFICACIÓN AQUÍ: La función highlightFeature ahora solo aplica un borde diferente
+        // y lo trae al frente, sin cambiar el color de relleno a amarillo.
         function highlightFeature(e) {
             highlightLayer = e.target;
 
+            // Almacena el estilo actual antes de modificarlo para el hover
+            // Esto es crucial para poder restaurarlo después
+            e.target._originalStyle = e.target.options.fillColor ? {
+                radius: e.target.options.radius,
+                opacity: e.target.options.opacity,
+                color: e.target.options.color,
+                dashArray: e.target.options.dashArray,
+                lineCap: e.target.options.lineCap,
+                lineJoin: e.target.options.lineJoin,
+                weight: e.target.options.weight,
+                fill: e.target.options.fill,
+                fillOpacity: e.target.options.fillOpacity,
+                fillColor: e.target.options.fillColor,
+                interactive: e.target.options.interactive
+            } : null; // Si no tiene fillColor (ej. líneas), no lo almacenes así
+
             if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
               highlightLayer.setStyle({
-                color: '#ffff00',
+                color: 'cyan', // Un color diferente para el hover en líneas
+                weight: 5
               });
             } else {
               highlightLayer.setStyle({
-                fillColor: '#ffff00',
-                fillOpacity: 1
+                // Mantén el color de relleno original, solo cambia el borde
+                // fillColor: e.target.options.fillColor, // No lo cambies
+                color: 'cyan', // Color del borde al pasar el mouse
+                weight: 4,     // Ancho del borde al pasar el mouse
+                opacity: 1,    // Asegura que el borde sea opaco
+                fillOpacity: e.target.options.fillOpacity // Mantén la opacidad de relleno original
               });
             }
+
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                highlightLayer.bringToFront();
+            }
         }
+        // --- FIN MODIFICACIÓN highlightFeature ---
+
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
-        }).fitBounds([[-44.47403719339656,-78.56977910576998],[-36.20821317609506,-62.44080111648155]]);
+        }).fitBounds([[-44.47403719339656,-78.56977911648155],[-36.20821317609506,-62.44080111648155]]);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -154,11 +184,27 @@
         map.addLayer(layer_EsriSatellite_1);
         function pop_ActividadesGrupo_2(feature, layer) {
             layer.on({
+                // MODIFICACIÓN: Al salir del mouse, verifica si hay un estilo original guardado
+                // o si el punto fue resaltado por la búsqueda.
                 mouseout: function(e) {
-                    for (var i in e.target._eventParents) {
-                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
-                            e.target._eventParents[i].resetStyle(e.target);
-                        }
+                    // Si el punto fue resaltado por la búsqueda, NO lo resetees al salir el mouse.
+                    // Solo resetea si no está actualmente en el estado de "búsqueda resaltada"
+                    if (e.target._isSearchHighlighted) {
+                        return; // No hagas nada, el estilo amarillo de búsqueda debe persistir
+                    }
+
+                    // Si no está resaltado por búsqueda, restaura el estilo original o el de getOriginalStyle
+                    if (e.target._originalStyle) {
+                        e.target.setStyle(e.target._originalStyle);
+                    } else {
+                        // Si no hay un _originalStyle (por si el punto nunca se había "hovered"),
+                        // usa el estilo por defecto.
+                        e.target.setStyle(getOriginalStyle(e.target.feature));
+                    }
+
+                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                        // Si estás manejando z-index, puedes bajarlo aquí
+                        // e.target.bringToBack(); // Ojo con esto, puede ser problemático con otras capas
                     }
                 },
                 mouseover: highlightFeature,
@@ -327,7 +373,7 @@
             initial: false,
             hideMarkerOnCollapse: true,
             propertyName: 'Categorias',
-            zoom: 14, // Este zoom se usará si solo se encuentra un punto, pero fitBounds tiene prioridad
+            zoom: 14,
             marker: false, // Deshabilita el marcador temporal del plugin
         });
 
@@ -343,6 +389,7 @@
                 if (layer.getPopup() && layer.getPopup().isOpen()) {
                     layer.closePopup();
                 }
+                layer._isSearchHighlighted = false; // Elimina la bandera de resaltado de búsqueda
             });
 
             var bounds = L.latLngBounds([]); // Inicializa un bounds vacío para todos los puntos encontrados
@@ -366,6 +413,7 @@
                     }
                     bounds.extend(layer.getLatLng()); // Añade la latlng al bounds
                     matchingLayers.push(layer); // Añade la capa al array de coincidencias
+                    layer._isSearchHighlighted = true; // Marca este punto como resaltado por la búsqueda
                 }
             });
 
@@ -386,6 +434,7 @@
                 if (layer.getPopup() && layer.getPopup().isOpen()) {
                     layer.closePopup();
                 }
+                layer._isSearchHighlighted = false; // Remueve la bandera de resaltado de búsqueda
             });
         });
 
