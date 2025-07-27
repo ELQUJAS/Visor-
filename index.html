@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
@@ -18,6 +18,33 @@
             height: 100%;
             padding: 0;
             margin: 0;
+        }
+        /* Estilos para el nuevo control de búsqueda de coordenadas */
+        .leaflet-control-coords {
+            background: #fff;
+            padding: 8px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+            border-radius: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+        .leaflet-control-coords input[type="text"] {
+            width: 80px;
+            padding: 4px;
+            margin: 0 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .leaflet-control-coords button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .leaflet-control-coords button:hover {
+            background-color: #0056b3;
         }
         </style>
         <title></title>
@@ -298,11 +325,52 @@
             document.getElementsByClassName('search-button')[1].className += ' fa fa-binoculars';
         }
 
-        // --- INICIO DE LA CORRECCIÓN ---
-        // Esto fuerza a Leaflet a recalcular el tamaño del mapa,
-        // útil si el contenedor no tenía un tamaño definido al inicio.
         map.invalidateSize();
-        // --- FIN DE LA CORRECCIÓN ---
+
+        // --- INICIO DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS ---
+        var currentCoordMarker; // Variable para mantener la referencia al marcador de coordenadas
+
+        var CoordsSearchControl = L.Control.extend({
+            onAdd: function(map) {
+                var div = L.DomUtil.create('div', 'leaflet-control-coords');
+                div.innerHTML = 'Lat: <input type="text" id="coordLat" value="-39.247217" /> ' +
+                                'Lon: <input type="text" id="coordLon" value="-72.204498" /> ' +
+                                '<button id="goCoords">Ir</button>';
+
+                L.DomEvent.disableClickPropagation(div); // Evita que los clics dentro del control afecten al mapa
+
+                var goButton = div.querySelector('#goCoords');
+                L.DomEvent.on(goButton, 'click', function() {
+                    var lat = parseFloat(div.querySelector('#coordLat').value);
+                    var lon = parseFloat(div.querySelector('#coordLon').value);
+
+                    if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                        map.setView([lat, lon], 14); // Centra el mapa en las coordenadas con un zoom de 14
+
+                        // Elimina el marcador anterior si existe
+                        if (currentCoordMarker) {
+                            map.removeLayer(currentCoordMarker);
+                        }
+
+                        // Añade un nuevo marcador en las coordenadas
+                        currentCoordMarker = L.marker([lat, lon]).addTo(map)
+                            .bindPopup(`**Coordenadas:**<br>Lat: ${lat}<br>Lon: ${lon}`)
+                            .openPopup();
+                    } else {
+                        alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
+                    }
+                });
+
+                return div;
+            },
+            onRemove: function(map) {
+                // Limpia el control si es necesario
+            }
+        });
+
+        // Añade el control al mapa en la posición deseada (ej. topright)
+        new CoordsSearchControl().addTo(map);
+        // --- FIN DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS ---
         </script>
     </body>
 </html>
