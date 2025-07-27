@@ -51,14 +51,7 @@
             background-color: #0056b3;
         }
 
-        /* Estilo para los elementos resaltados por la búsqueda de categoría */
-        .leaflet-marker-icon.search-found {
-            border: 3px solid yellow !important; /* Resaltado amarillo para los iconos */
-            box-shadow: 0 0 5px yellow;
-        }
-        .leaflet-tooltip.search-found, .leaflet-popup.search-found {
-            border: 2px solid yellow !important; /* Resaltado para popups/tooltips si se usan */
-        }
+        /* Removido el estilo .search-found para iconos, ya que no queremos un símbolo */
 
         </style>
         <title></title>
@@ -193,6 +186,12 @@
 			layer.bindPopup(content, { maxHeight: 400 });
         }
 
+        // Función para obtener el estilo original de una característica (punto)
+        // Esta función ya la tenías y es crucial para resetear los estilos
+        function getOriginalStyle(feature) {
+            return style_ActividadesGrupo_2_0(feature);
+        }
+
         function style_ActividadesGrupo_2_0(feature) {
             switch(String(feature.properties['Categorias'])) {
                 case 'Apoyo Iniciativas de Conservación':
@@ -308,7 +307,7 @@
                     feature: feature,
                     variables: {}
                 };
-                return L.circleMarker(latlng, style_ActividadesGrupo_2_0(feature));
+                return L.circleMarker(latlng, getOriginalStyle(feature)); // Usa getOriginalStyle aquí
             },
         });
         bounds_group.addLayer(layer_ActividadesGrupo_2);
@@ -336,60 +335,51 @@
             hideMarkerOnCollapse: true, // Esto oculta el marcador por defecto de la búsqueda
             propertyName: 'Categorias',
             zoom: 14, // Nivel de zoom al encontrar un resultado
-            // Función para estilizar los elementos encontrados
-            marker: { // Puedes personalizar el marcador de búsqueda
-                icon: new L.Icon({
-                    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', // Icono dorado
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                }),
-                // Añade un evento al marcador para que si se cierra su popup, se deseleccione la búsqueda
-                onEachFeature: function(feature, layer) {
-                    layer.on('popupclose', function() {
-                        searchControl.collapse(); // Cierra el control de búsqueda
-                        searchControl._input.value = ''; // Limpia el valor del input
-                        searchControl.hideSearchData(); // Esto debería resetear el resaltado
-                        // Necesitamos forzar el reseteo del estilo a los estilos originales
-                        layer_ActividadesGrupo_2.eachLayer(function(l) {
-                            l.setStyle(style_ActividadesGrupo_2_0(l.feature)); // Aplica el estilo original
-                        });
-                    });
-                }
-            },
-            // Estilo de resaltado para los círculos de la capa (los puntos)
-            // Cuando se encuentra un resultado, esta función se aplica a todas las capas que coinciden
-            onEachFeature: function(feature, layer) {
-                // Guarda el estilo original del feature
-                layer._originalStyle = style_ActividadesGrupo_2_0(feature);
-
-                layer.on('search:locationfound', function(e) {
-                    // Solo si la categoría de este feature coincide con la búsqueda
-                    if (e.text && feature.properties.Categorias && feature.properties.Categorias.includes(e.text)) {
-                        layer.setStyle({
-                            radius: 12.0, // Hazlo un poco más grande
-                            color: 'yellow', // Borde amarillo
-                            weight: 4.0, // Borde más grueso
-                            fillColor: 'yellow', // Relleno amarillo
-                            fillOpacity: 0.7 // Un poco de transparencia
-                        });
-                        if (layer.bringToFront) {
-                            layer.bringToFront(); // Trae el punto al frente
-                        }
-                    }
-                });
-                layer.on('search:collapsed', function(e) {
-                    // Cuando la barra de búsqueda se colapsa (o se limpia), restaura el estilo original
-                    if (layer._originalStyle) {
-                        layer.setStyle(layer._originalStyle);
-                    }
-                });
-            }
+            marker: false, // ¡IMPORTANTE! Deshabilita el marcador temporal del plugin
+            // No necesitamos onEachFeature aquí en el searchControl, lo manejaremos con eventos
         });
 
         map.addControl(searchControl);
+
+        // --- Eventos para manejar el resaltado de múltiples puntos ---
+
+        // Cuando el buscador encuentra una ubicación (categoría)
+        searchControl.on('search:located', function(e) {
+            // Primero, resetea todos los estilos para limpiar búsquedas anteriores
+            layer_ActividadesGrupo_2.eachLayer(function(layer) {
+                layer.setStyle(getOriginalStyle(layer.feature));
+            });
+
+            // Luego, aplica el resaltado a todos los puntos que coinciden con la categoría buscada
+            layer_ActividadesGrupo_2.eachLayer(function(layer) {
+                if (layer.feature.properties.Categorias === e.text) { // Compara con el texto exacto buscado
+                    layer.setStyle({
+                        radius: 12.0, // Hazlo un poco más grande
+                        color: 'yellow', // Borde amarillo
+                        weight: 4.0, // Borde más grueso
+                        fillColor: 'yellow', // Relleno amarillo
+                        fillOpacity: 0.7 // Un poco de transparencia
+                    });
+                    if (layer.bringToFront) {
+                        layer.bringToFront(); // Trae el punto al frente
+                    }
+                }
+            });
+
+            // Opcional: Centra el mapa en el primer resultado encontrado si lo deseas
+            if (e.layer) {
+                map.setView(e.layer.getLatLng(), searchControl.options.zoom);
+            }
+        });
+
+        // Cuando el buscador se colapsa o se limpia (incluyendo la "x" de la barra de búsqueda)
+        searchControl.on('search:collapsed', function() {
+            // Resetea todos los estilos a su estado original
+            layer_ActividadesGrupo_2.eachLayer(function(layer) {
+                layer.setStyle(getOriginalStyle(layer.feature));
+            });
+        });
+
         // --- FIN DE LA MODIFICACIÓN EN L.Control.Search ---
 
         if (typeof url === 'undefined') {
