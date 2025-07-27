@@ -50,6 +50,16 @@
         .leaflet-control-coords button:hover {
             background-color: #0056b3;
         }
+
+        /* Estilo para los elementos resaltados por la búsqueda de categoría */
+        .leaflet-marker-icon.search-found {
+            border: 3px solid yellow !important; /* Resaltado amarillo para los iconos */
+            box-shadow: 0 0 5px yellow;
+        }
+        .leaflet-tooltip.search-found, .leaflet-popup.search-found {
+            border: 2px solid yellow !important; /* Resaltado para popups/tooltips si se usan */
+        }
+
         </style>
         <title></title>
     </head>
@@ -318,11 +328,70 @@
         });
         lay.addTo(map);
         setBounds();
-        map.addControl(new L.Control.Search({
+
+        // --- INICIO DE LA MODIFICACIÓN EN L.Control.Search ---
+        var searchControl = new L.Control.Search({
             layer: layer_ActividadesGrupo_2,
             initial: false,
-            hideMarkerOnCollapse: true,
-            propertyName: 'Categorias'}));
+            hideMarkerOnCollapse: true, // Esto oculta el marcador por defecto de la búsqueda
+            propertyName: 'Categorias',
+            zoom: 14, // Nivel de zoom al encontrar un resultado
+            // Función para estilizar los elementos encontrados
+            marker: { // Puedes personalizar el marcador de búsqueda
+                icon: new L.Icon({
+                    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', // Icono dorado
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                }),
+                // Añade un evento al marcador para que si se cierra su popup, se deseleccione la búsqueda
+                onEachFeature: function(feature, layer) {
+                    layer.on('popupclose', function() {
+                        searchControl.collapse(); // Cierra el control de búsqueda
+                        searchControl._input.value = ''; // Limpia el valor del input
+                        searchControl.hideSearchData(); // Esto debería resetear el resaltado
+                        // Necesitamos forzar el reseteo del estilo a los estilos originales
+                        layer_ActividadesGrupo_2.eachLayer(function(l) {
+                            l.setStyle(style_ActividadesGrupo_2_0(l.feature)); // Aplica el estilo original
+                        });
+                    });
+                }
+            },
+            // Estilo de resaltado para los círculos de la capa (los puntos)
+            // Cuando se encuentra un resultado, esta función se aplica a todas las capas que coinciden
+            onEachFeature: function(feature, layer) {
+                // Guarda el estilo original del feature
+                layer._originalStyle = style_ActividadesGrupo_2_0(feature);
+
+                layer.on('search:locationfound', function(e) {
+                    // Solo si la categoría de este feature coincide con la búsqueda
+                    if (e.text && feature.properties.Categorias && feature.properties.Categorias.includes(e.text)) {
+                        layer.setStyle({
+                            radius: 12.0, // Hazlo un poco más grande
+                            color: 'yellow', // Borde amarillo
+                            weight: 4.0, // Borde más grueso
+                            fillColor: 'yellow', // Relleno amarillo
+                            fillOpacity: 0.7 // Un poco de transparencia
+                        });
+                        if (layer.bringToFront) {
+                            layer.bringToFront(); // Trae el punto al frente
+                        }
+                    }
+                });
+                layer.on('search:collapsed', function(e) {
+                    // Cuando la barra de búsqueda se colapsa (o se limpia), restaura el estilo original
+                    if (layer._originalStyle) {
+                        layer.setStyle(layer._originalStyle);
+                    }
+                });
+            }
+        });
+
+        map.addControl(searchControl);
+        // --- FIN DE LA MODIFICACIÓN EN L.Control.Search ---
+
         if (typeof url === 'undefined') {
             document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
         } else {
@@ -365,7 +434,7 @@
                                 .bindPopup(`**Coordenadas:**<br>Lat: ${lat}<br>Lon: ${lon}`)
                                 .openPopup();
 
-                            // --- INICIO DE LA CORRECCIÓN: Eliminar marcador al cerrar el popup ---
+                            // --- Eliminar marcador al cerrar el popup ---
                             currentCoordMarker.on('popupclose', function() {
                                 if (currentCoordMarker) {
                                     map.removeLayer(currentCoordMarker);
