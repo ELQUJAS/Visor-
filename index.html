@@ -364,6 +364,16 @@
                             currentCoordMarker = L.marker([lat, lon]).addTo(map)
                                 .bindPopup(`**Coordenadas:**<br>Lat: ${lat}<br>Lon: ${lon}`)
                                 .openPopup();
+
+                            // --- INICIO DE LA CORRECCIÓN: Eliminar marcador al cerrar el popup ---
+                            currentCoordMarker.on('popupclose', function() {
+                                if (currentCoordMarker) {
+                                    map.removeLayer(currentCoordMarker);
+                                    currentCoordMarker = null; // Limpiar la referencia
+                                }
+                            });
+                            // --- FIN DE LA CORRECCIÓN ---
+
                         } else {
                             alert('Por favor, introduce coordenadas numéricas válidas (Lat: -90 a 90, Lon: -180 a 180).');
                         }
