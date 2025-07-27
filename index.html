@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-app-capable" content="yes">
+        <meta name="apple-mobile-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
@@ -73,13 +73,10 @@
         <script>
         var highlightLayer;
 
-        // --- MODIFICACIÓN AQUÍ: La función highlightFeature ahora solo aplica un borde diferente
-        // y lo trae al frente, sin cambiar el color de relleno a amarillo.
         function highlightFeature(e) {
             highlightLayer = e.target;
 
             // Almacena el estilo actual antes de modificarlo para el hover
-            // Esto es crucial para poder restaurarlo después
             e.target._originalStyle = e.target.options.fillColor ? {
                 radius: e.target.options.radius,
                 opacity: e.target.options.opacity,
@@ -92,21 +89,19 @@
                 fillOpacity: e.target.options.fillOpacity,
                 fillColor: e.target.options.fillColor,
                 interactive: e.target.options.interactive
-            } : null; // Si no tiene fillColor (ej. líneas), no lo almacenes así
+            } : null;
 
             if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
               highlightLayer.setStyle({
-                color: 'cyan', // Un color diferente para el hover en líneas
+                color: 'cyan',
                 weight: 5
               });
             } else {
               highlightLayer.setStyle({
-                // Mantén el color de relleno original, solo cambia el borde
-                // fillColor: e.target.options.fillColor, // No lo cambies
-                color: 'cyan', // Color del borde al pasar el mouse
-                weight: 4,     // Ancho del borde al pasar el mouse
-                opacity: 1,    // Asegura que el borde sea opaco
-                fillOpacity: e.target.options.fillOpacity // Mantén la opacidad de relleno original
+                color: 'cyan',
+                weight: 4,
+                opacity: 1,
+                fillOpacity: e.target.options.fillOpacity
               });
             }
 
@@ -114,7 +109,6 @@
                 highlightLayer.bringToFront();
             }
         }
-        // --- FIN MODIFICACIÓN highlightFeature ---
 
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
@@ -122,7 +116,7 @@
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
-        // remove popup's row if "visible-with-data"
+
         function removeEmptyRowsFromPopupContent(content, feature) {
            var tempDiv = document.createElement('div');
            tempDiv.innerHTML = content;
@@ -136,13 +130,12 @@
            }
            return tempDiv.innerHTML;
         }
-        // add class to format popup if it contains media
+
 		function addClassToPopupIfMedia(content, popup) {
 			var tempDiv = document.createElement('div');
 			tempDiv.innerHTML = content;
 			if (tempDiv.querySelector('td img')) {
 				popup._contentNode.classList.add('media');
-					// Delay to force the redraw
 					setTimeout(function() {
 						popup.update();
 					}, 10);
@@ -168,7 +161,8 @@
             maxNativeZoom: 19
         });
         layer_OpenStreetMap_0;
-        map.addLayer(layer_OpenStreetMap_0);
+        // map.addLayer(layer_OpenStreetMap_0); // No lo añadas aquí, se añade por defecto con baseLayers
+
         map.createPane('pane_EsriSatellite_1');
         map.getPane('pane_EsriSatellite_1').style.zIndex = 401;
         var layer_EsriSatellite_1 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -181,30 +175,18 @@
             maxNativeZoom: 17
         });
         layer_EsriSatellite_1;
-        map.addLayer(layer_EsriSatellite_1);
+        // map.addLayer(layer_EsriSatellite_1); // No lo añadas aquí, se añade por defecto con baseLayers
+
         function pop_ActividadesGrupo_2(feature, layer) {
             layer.on({
-                // MODIFICACIÓN: Al salir del mouse, verifica si hay un estilo original guardado
-                // o si el punto fue resaltado por la búsqueda.
                 mouseout: function(e) {
-                    // Si el punto fue resaltado por la búsqueda, NO lo resetees al salir el mouse.
-                    // Solo resetea si no está actualmente en el estado de "búsqueda resaltada"
                     if (e.target._isSearchHighlighted) {
-                        return; // No hagas nada, el estilo amarillo de búsqueda debe persistir
+                        return;
                     }
-
-                    // Si no está resaltado por búsqueda, restaura el estilo original o el de getOriginalStyle
                     if (e.target._originalStyle) {
                         e.target.setStyle(e.target._originalStyle);
                     } else {
-                        // Si no hay un _originalStyle (por si el punto nunca se había "hovered"),
-                        // usa el estilo por defecto.
                         e.target.setStyle(getOriginalStyle(e.target.feature));
-                    }
-
-                    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                        // Si estás manejando z-index, puedes bajarlo aquí
-                        // e.target.bringToBack(); // Ojo con esto, puede ser problemático con otras capas
                     }
                 },
                 mouseover: highlightFeature,
@@ -230,7 +212,6 @@
 			layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        // Función para obtener el estilo original de una característica (punto)
         function getOriginalStyle(feature) {
             switch(String(feature.properties['Categorias'])) {
                 case 'Apoyo Iniciativas de Conservación':
@@ -346,22 +327,26 @@
                     feature: feature,
                     variables: {}
                 };
-                return L.circleMarker(latlng, getOriginalStyle(feature)); // Usa getOriginalStyle aquí
+                return L.circleMarker(latlng, getOriginalStyle(feature));
             },
         });
         bounds_group.addLayer(layer_ActividadesGrupo_2);
         map.addLayer(layer_ActividadesGrupo_2);
-        var overlaysTree = [
-            {label: 'Actividades Grupo<br /><table><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_ApoyoIniciativasdeConservación0.png" /></td><td>Apoyo Iniciativas de Conservación</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Apoyoiniciativasprivadas1.png" /></td><td>Apoyo iniciativas privadas</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_IniciativasdeEducaciónydifusión2.png" /></td><td>Iniciativas de Educación y difusión</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Monitoreoomuestreodelaespecie3.png" /></td><td>Monitoreo o muestreo de la especie</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Reducciónomitigacióndeamenazas4.png" /></td><td>Reducción o mitigación de amenazas</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Relevamientodeinformacionsobrerelacionguignahumanos5.png" /></td><td>Relevamiento de informacion sobre relacion guigna-humanos</td></tr></table>', layer: layer_ActividadesGrupo_2},
-            {label: "Esri Satellite", layer: layer_EsriSatellite_1},
-            {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},]
-        var lay = L.control.layers.tree(null, overlaysTree,{
-            //namedToggle: true,
-            //selectorBack: false,
-            //closedSymbol: '&#8862; &#x1f5c0;',
-            //openedSymbol: '&#8863; &#x1f5c1;',
-            //collapseAll: 'Collapse all',
-            //expandAll: 'Expand all',
+
+        // --- MODIFICACIÓN: Define baseLayers y overlays por separado ---
+        var baseLayers = [
+            {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},
+            {label: "Esri Satellite", layer: layer_EsriSatellite_1}
+        ];
+
+        var overlays = [
+            {label: 'Actividades Grupo<br /><table><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_ApoyoIniciativasdeConservación0.png" /></td><td>Apoyo Iniciativas de Conservación</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Apoyoiniciativasprivadas1.png" /></td><td>Apoyo iniciativas privadas</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_IniciativasdeEducaciónydifusión2.png" /></td><td>Iniciativas de Educación y difusión</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Monitoreoomuestreodelaespecie3.png" /></td><td>Monitoreo o muestreo de la especie</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Reducciónomitigacióndeamenazas4.png" /></td><td>Reducción o mitigación de amenazas</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Relevamientodeinformacionsobrerelacionguignahumanos5.png" /></td><td>Relevamiento de informacion sobre relacion guigna-humanos</td></tr></table>', layer: layer_ActividadesGrupo_2}
+        ];
+
+        // Añade la capa base predeterminada al mapa
+        layer_OpenStreetMap_0.addTo(map);
+
+        var lay = L.control.layers.tree(baseLayers, overlays, {
             collapsed: true,
         });
         lay.addTo(map);
@@ -374,71 +359,60 @@
             hideMarkerOnCollapse: true,
             propertyName: 'Categorias',
             zoom: 14,
-            marker: false, // Deshabilita el marcador temporal del plugin
+            marker: false,
         });
 
         map.addControl(searchControl);
 
-        // --- Eventos para manejar el resaltado de múltiples puntos y zoom general ---
-
-        // Cuando el buscador encuentra una ubicación (categoría)
         searchControl.on('search:located', function(e) {
-            // Primero, resetea todos los estilos y cierra todos los popups de la capa de actividades
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 layer.setStyle(getOriginalStyle(layer.feature));
                 if (layer.getPopup() && layer.getPopup().isOpen()) {
                     layer.closePopup();
                 }
-                layer._isSearchHighlighted = false; // Elimina la bandera de resaltado de búsqueda
+                layer._isSearchHighlighted = false;
             });
 
-            var bounds = L.latLngBounds([]); // Inicializa un bounds vacío para todos los puntos encontrados
-            var matchingLayers = []; // Almacena las capas que coinciden
+            var bounds = L.latLngBounds([]);
+            var matchingLayers = [];
 
-            // Luego, aplica el resaltado a todos los puntos que coinciden con la categoría buscada
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
-                if (layer.feature.properties.Categorias === e.text) { // Compara con el texto exacto buscado
+                if (layer.feature.properties.Categorias === e.text) {
                     layer.setStyle({
-                        radius: 12.0, // Hazlo un poco más grande
-                        color: 'yellow', // Borde amarillo
-                        weight: 4.0, // Borde más grueso
-                        fillColor: 'yellow', // Relleno amarillo
-                        fillOpacity: 0.7 // Un poco de transparencia
+                        radius: 12.0,
+                        color: 'yellow',
+                        weight: 4.0,
+                        fillColor: 'yellow',
+                        fillOpacity: 0.7
                     });
                     if (layer.bringToFront) {
-                        layer.bringToFront(); // Trae el punto al frente
+                        layer.bringToFront();
                     }
                     if (layer.openPopup) {
-                        layer.openPopup(); // Abre el popup del punto
+                        layer.openPopup();
                     }
-                    bounds.extend(layer.getLatLng()); // Añade la latlng al bounds
-                    matchingLayers.push(layer); // Añade la capa al array de coincidencias
-                    layer._isSearchHighlighted = true; // Marca este punto como resaltado por la búsqueda
+                    bounds.extend(layer.getLatLng());
+                    matchingLayers.push(layer);
+                    layer._isSearchHighlighted = true;
                 }
             });
 
-            // Ajusta el mapa para mostrar todos los puntos encontrados
             if (!bounds.isEmpty() && matchingLayers.length > 0) {
-                map.fitBounds(bounds, { padding: [50, 50] }); // Ajusta el padding si es necesario
+                map.fitBounds(bounds, { padding: [50, 50] });
             } else if (matchingLayers.length === 1) {
-                // Si solo hay un punto, céntralo con el zoom definido en el control
                 map.setView(matchingLayers[0].getLatLng(), searchControl.options.zoom);
             }
         });
 
-        // Cuando el buscador se colapsa o se limpia (incluyendo la "x" de la barra de búsqueda)
         searchControl.on('search:collapsed', function() {
-            // Resetea todos los estilos a su estado original y cierra todos los popups
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 layer.setStyle(getOriginalStyle(layer.feature));
                 if (layer.getPopup() && layer.getPopup().isOpen()) {
                     layer.closePopup();
                 }
-                layer._isSearchHighlighted = false; // Remueve la bandera de resaltado de búsqueda
+                layer._isSearchHighlighted = false;
             });
         });
-
-        // --- FIN DE LA MODIFICACIÓN EN L.Control.Search ---
 
         if (typeof url === 'undefined') {
             document.getElementsByClassName('search-button')[0].className += ' fa fa-binoculars';
@@ -449,7 +423,7 @@
         map.invalidateSize();
 
         // --- INICIO DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS (Modificada) ---
-        var currentCoordMarker; // Variable para mantener la referencia al marcador de coordenadas
+        var currentCoordMarker;
 
         var CoordsSearchControl = L.Control.extend({
             onAdd: function(map) {
@@ -457,12 +431,11 @@
                 div.innerHTML = 'Coordenadas (Lat Lon): <input type="text" id="coordInput" value="-39.247217 -72.204498" /> ' +
                                 '<button id="goCoords">Ir</button>';
 
-                L.DomEvent.disableClickPropagation(div); // Evita que los clics dentro del control afecten al mapa
+                L.DomEvent.disableClickPropagation(div);
 
                 var goButton = div.querySelector('#goCoords');
                 L.DomEvent.on(goButton, 'click', function() {
                     var inputString = div.querySelector('#coordInput').value;
-                    // Intenta dividir la cadena por espacios
                     var parts = inputString.trim().split(/\s+/);
 
                     if (parts.length === 2) {
@@ -470,26 +443,22 @@
                         var lon = parseFloat(parts[1]);
 
                         if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-                            map.setView([lat, lon], 14); // Centra el mapa en las coordenadas con un zoom de 14
+                            map.setView([lat, lon], 14);
 
-                            // Elimina el marcador anterior si existe
                             if (currentCoordMarker) {
                                 map.removeLayer(currentCoordMarker);
                             }
 
-                            // Añade un nuevo marcador en las coordenadas
                             currentCoordMarker = L.marker([lat, lon]).addTo(map)
                                 .bindPopup(`**Coordenadas:**<br>Lat: ${lat}<br>Lon: ${lon}`)
                                 .openPopup();
 
-                            // --- Eliminar marcador al cerrar el popup ---
                             currentCoordMarker.on('popupclose', function() {
                                 if (currentCoordMarker) {
                                     map.removeLayer(currentCoordMarker);
-                                    currentCoordMarker = null; // Limpiar la referencia
+                                    currentCoordMarker = null;
                                 }
                             });
-                            // --- FIN DE LA CORRECCIÓN ---
 
                         } else {
                             alert('Por favor, introduce coordenadas numéricas válidas (Lat: -90 a 90, Lon: -180 a 180).');
@@ -499,14 +468,12 @@
                     }
                 });
 
-                // Permite buscar al presionar Enter en el campo de texto
                 var coordInput = div.querySelector('#coordInput');
                 L.DomEvent.on(coordInput, 'keydown', function(e) {
-                    if (e.keyCode === 13) { // 13 es el código para la tecla Enter
-                        goButton.click(); // Simula un clic en el botón "Ir"
+                    if (e.keyCode === 13) {
+                        goButton.click();
                     }
                 });
-
 
                 return div;
             },
@@ -515,7 +482,6 @@
             }
         });
 
-        // Añade el control al mapa en la posición deseada (ej. topright)
         new CoordsSearchControl().addTo(map);
         // --- FIN DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS (Modificada) ---
         </script>
