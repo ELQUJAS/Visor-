@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
@@ -76,7 +76,6 @@
         function highlightFeature(e) {
             highlightLayer = e.target;
 
-            // Almacena el estilo actual antes de modificarlo para el hover
             e.target._originalStyle = e.target.options.fillColor ? {
                 radius: e.target.options.radius,
                 opacity: e.target.options.opacity,
@@ -161,7 +160,6 @@
             maxNativeZoom: 19
         });
         layer_OpenStreetMap_0;
-        // map.addLayer(layer_OpenStreetMap_0); // No lo añadas aquí, se añade por defecto con baseLayers
 
         map.createPane('pane_EsriSatellite_1');
         map.getPane('pane_EsriSatellite_1').style.zIndex = 401;
@@ -175,7 +173,6 @@
             maxNativeZoom: 17
         });
         layer_EsriSatellite_1;
-        // map.addLayer(layer_EsriSatellite_1); // No lo añadas aquí, se añade por defecto con baseLayers
 
         function pop_ActividadesGrupo_2(feature, layer) {
             layer.on({
@@ -333,7 +330,6 @@
         bounds_group.addLayer(layer_ActividadesGrupo_2);
         map.addLayer(layer_ActividadesGrupo_2);
 
-        // --- MODIFICACIÓN: Define baseLayers y overlays por separado ---
         var baseLayers = [
             {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},
             {label: "Esri Satellite", layer: layer_EsriSatellite_1}
@@ -343,11 +339,11 @@
             {label: 'Actividades Grupo<br /><table><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_ApoyoIniciativasdeConservación0.png" /></td><td>Apoyo Iniciativas de Conservación</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Apoyoiniciativasprivadas1.png" /></td><td>Apoyo iniciativas privadas</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_IniciativasdeEducaciónydifusión2.png" /></td><td>Iniciativas de Educación y difusión</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Monitoreoomuestreodelaespecie3.png" /></td><td>Monitoreo o muestreo de la especie</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Reducciónomitigacióndeamenazas4.png" /></td><td>Reducción o mitigación de amenazas</td></tr><tr><td style="text-align: center;"><img src="legend/ActividadesGrupo_2_Relevamientodeinformacionsobrerelacionguignahumanos5.png" /></td><td>Relevamiento de informacion sobre relacion guigna-humanos</td></tr></table>', layer: layer_ActividadesGrupo_2}
         ];
 
-        // Añade la capa base predeterminada al mapa
         layer_OpenStreetMap_0.addTo(map);
 
         var lay = L.control.layers.tree(baseLayers, overlays, {
-            collapsed: true,
+            // Elimina 'collapsed: true,' o cámbialo a 'false'
+            collapsed: false, // ¡ESTA ES LA MODIFICACIÓN CLAVE!
         });
         lay.addTo(map);
         setBounds();
