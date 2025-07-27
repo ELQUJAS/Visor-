@@ -19,7 +19,7 @@
             padding: 0;
             margin: 0;
         }
-        /* Estilos para el control de búsqueda de coordenadas (anteriormente agregado) */
+        /* Estilos para el control de búsqueda de coordenadas (superior derecho) */
         .leaflet-control-coords {
             background: #fff;
             padding: 8px;
@@ -50,25 +50,27 @@
             background-color: #0056b3;
         }
 
-        /* --- NUEVOS ESTILOS PARA EL VISUALIZADOR DE COORDENADAS --- */
+        /* ESTILOS PARA EL VISUALIZADOR DE COORDENADAS (inferior izquierdo) */
         .leaflet-control-mouse-position {
             background: rgba(255, 255, 255, 0.8);
             padding: 5px 10px;
-            margin: 5px; /* Pequeño margen para que no toque la esquina exacta */
+            margin: 5px;
             border-radius: 5px;
-            font-family: monospace; /* Fuente monoespaciada para alineación */
+            font-family: monospace;
             font-size: 12px;
             color: #333;
             text-align: left;
             min-width: 250px; /* Ancho mínimo para que quepan las coordenadas */
             white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+            line-height: 1.4; /* Espaciado entre líneas */
         }
-        /* Ajuste para móviles si es necesario, aunque el width ya ayuda */
+        /* Ajuste para móviles si es necesario */
         @media (max-width: 768px) {
             .leaflet-control-mouse-position {
                 min-width: unset;
                 width: auto;
                 font-size: 10px;
+                padding: 3px 6px;
             }
         }
         </style>
@@ -373,7 +375,7 @@
         });
 
         var allActivityLayers = L.featureGroup(Object.values(categoryLayers));
-        map.addLayer(allActivityLayers);
+        map.addLayer(allActivityLayers); // Asegúrate de que todos los puntos estén en el mapa, aunque sea invisible al inicio
 
         var baseLayers = [
             {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},
@@ -385,7 +387,7 @@
                 label: 'Actividades Grupo',
                 children: [
                     {label: 'Apoyo Iniciativas de Conservación<br /><img src="legend/ActividadesGrupo_2_ApoyoIniciativasdeConservación0.png" />', layer: categoryLayers['Apoyo Iniciativas de Conservación']},
-                    {label: 'Apoyo iniciativas privadas<br /><img src="legend/ActividadesGrupo_2_Apoyoiniciativasprivadas1.png" />', layer: categoryLayers['Apoyo iniciativas privadas']},
+                    {label: 'Apoyo iniciativas privadas<br /><img src="legend/ActividadesGrupo_2_ApoyoiniFciativasprivadas1.png" />', layer: categoryLayers['Apoyo iniciativas privadas']},
                     {label: 'Iniciativas de Educación y difusión<br /><img src="legend/ActividadesGrupo_2_IniciativasdeEducaciónydifusión2.png" />', layer: categoryLayers['Iniciativas de Educación y difusión']},
                     {label: 'Monitoreo o muestreo de la especie<br /><img src="legend/ActividadesGrupo_2_Monitoreoomuestreodelaespecie3.png" />', layer: categoryLayers['Monitoreo o muestreo de la especie']},
                     {label: 'Reducción o mitigación de amenazas<br /><img src="legend/ActividadesGrupo_2_Reducciónomitigacióndeamenazas4.png" />', layer: categoryLayers['Reducción o mitigación de amenazas']},
@@ -475,7 +477,7 @@
 
         map.invalidateSize();
 
-        // --- Inicio del Control de Búsqueda de Coordenadas ---
+        // --- Inicio del Control de Búsqueda de Coordenadas (Superior Derecho) ---
         var currentCoordMarker;
 
         var CoordsSearchControl = L.Control.extend({
@@ -535,11 +537,12 @@
             }
         });
 
-        new CoordsSearchControl().addTo(map);
+        // Asegúrate de añadirlo en la posición deseada si no lo estaba
+        new CoordsSearchControl().addTo(map); // Por defecto se añade arriba a la derecha
         // --- Fin del Control de Búsqueda de Coordenadas ---
 
 
-        // --- INICIO DEL NUEVO VISUALIZADOR DE COORDENADAS LAT/LON Y UTM ---
+        // --- INICIO DEL VISUALIZADOR DE COORDENADAS LAT/LON Y UTM (Inferior Izquierdo) ---
         var MousePositionControl = L.Control.extend({
             onAdd: function(map) {
                 this._div = L.DomUtil.create('div', 'leaflet-control-mouse-position');
@@ -571,11 +574,13 @@
 
                     // Convierte a UTM Huso 18 Sur
                     try {
-                        // Latitud negativa para hemisferio sur
-                        var utm = L.utm(latlng.lat, latlng.lng, 18, 'S'); // Lat, Lon, Zona, Hemisferio (N/S)
+                        // L.utm(lat, lon, zone, hemisphere)
+                        // Para Chile, si estamos en Huso 18 Sur, usamos 18 y 'S'
+                        var utm = L.utm(latlng.lat, latlng.lng, 18, 'S');
                         utmText = `E: ${utm.easting.toFixed(2)} N: ${utm.northing.toFixed(2)} (Huso 18S)`;
                     } catch (error) {
-                        utmText = 'UTM (Huso 18S): Fuera de rango';
+                        console.error("Error al convertir a UTM:", error);
+                        utmText = 'UTM (Huso 18S): Error de conversión';
                     }
                 }
 
@@ -588,7 +593,7 @@
             position: 'bottomleft' // Ubicación del control
         });
         map.addControl(mousePositionControl);
-        // --- FIN DEL NUEVO VISUALIZADOR DE COORDENADAS LAT/LON Y UTM ---
+        // --- FIN DEL VISUALIZADOR DE COORDENADAS LAT/LON Y UTM ---
         </script>
     </body>
 </html>
