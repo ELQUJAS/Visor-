@@ -19,7 +19,7 @@
             padding: 0;
             margin: 0;
         }
-        /* Estilos para el nuevo control de búsqueda de coordenadas */
+        /* Estilos para el control de búsqueda de coordenadas (anteriormente agregado) */
         .leaflet-control-coords {
             background: #fff;
             padding: 8px;
@@ -50,6 +50,27 @@
             background-color: #0056b3;
         }
 
+        /* --- NUEVOS ESTILOS PARA EL VISUALIZADOR DE COORDENADAS --- */
+        .leaflet-control-mouse-position {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            margin: 5px; /* Pequeño margen para que no toque la esquina exacta */
+            border-radius: 5px;
+            font-family: monospace; /* Fuente monoespaciada para alineación */
+            font-size: 12px;
+            color: #333;
+            text-align: left;
+            min-width: 250px; /* Ancho mínimo para que quepan las coordenadas */
+            white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+        }
+        /* Ajuste para móviles si es necesario, aunque el width ya ayuda */
+        @media (max-width: 768px) {
+            .leaflet-control-mouse-position {
+                min-width: unset;
+                width: auto;
+                font-size: 10px;
+            }
+        }
         </style>
         <title></title>
     </head>
@@ -68,7 +89,7 @@
         <script src="js/labels.js"></script>
         <script src="js/leaflet.photon.js"></script>
         <script src="js/leaflet-search.js"></script>
-        <script src="data/ActividadesGrupo_2.js"></script>
+        <script src="js/utm.js"></script> <script src="data/ActividadesGrupo_2.js"></script>
         <script>
         var highlightLayer;
 
@@ -208,8 +229,6 @@
 			layer.bindPopup(content, { maxHeight: 400 });
         }
 
-        // --- Función para obtener el estilo original de una característica (punto) ---
-        // Se mantiene para el comportamiento de hover y reset
         function getOriginalStyle(feature) {
             switch(String(feature.properties['Categorias'])) {
                 case 'Apoyo Iniciativas de Conservación':
@@ -314,8 +333,6 @@
         map.getPane('pane_ActividadesGrupo_2').style.zIndex = 402;
         map.getPane('pane_ActividadesGrupo_2').style['mix-blend-mode'] = 'normal';
 
-        // --- MODIFICACIÓN CLAVE: Crear capas individuales por categoría ---
-        // Creamos un objeto para almacenar las capas de cada categoría
         var categoryLayers = {};
         var categories = [
             'Apoyo Iniciativas de Conservación',
@@ -326,7 +343,6 @@
             'Relevamiento de informacion sobre relacion guigna-humanos'
         ];
 
-        // Iterar sobre los datos GeoJSON para crear una capa para cada categoría
         categories.forEach(function(category) {
             var featuresInCategory = json_ActividadesGrupo_2.features.filter(function(feature) {
                 return feature.properties.Categorias === category;
@@ -343,7 +359,7 @@
                 var layer = L.geoJson(geoJsonData, {
                     attribution: '',
                     interactive: true,
-                    dataVar: 'json_ActividadesGrupo_2', // Esto puede ser genérico o específico
+                    dataVar: 'json_ActividadesGrupo_2',
                     layerName: 'layer_ActividadesGrupo_2_' + category.replace(/\s/g, '_'),
                     pane: 'pane_ActividadesGrupo_2',
                     onEachFeature: pop_ActividadesGrupo_2,
@@ -351,23 +367,13 @@
                         return L.circleMarker(latlng, getOriginalStyle(feature));
                     },
                 });
-                categoryLayers[category] = layer; // Almacena la capa en el objeto
-                bounds_group.addLayer(layer); // Añade cada subcapa al bounds_group
-                // No añadimos la capa al mapa aquí, se hará a través del control de capas
+                categoryLayers[category] = layer;
+                bounds_group.addLayer(layer);
             }
         });
 
-        // Asegurarse de que layer_ActividadesGrupo_2 no se defina como una única capa si ya la estamos dividiendo.
-        // Si json_ActividadesGrupo_2 ya está cargado por el script, se asume que contiene todos los puntos.
-        // La variable global `layer_ActividadesGrupo_2` ahora deberá ser una referencia a la colección total
-        // o ser modificada para referirse a todas las capas juntas para la búsqueda, o se debe ajustar la búsqueda.
-        // Para la búsqueda, necesitamos una referencia a todas las capas combinadas, no una única capa GeoJSON.
-        // Vamos a mantener la referencia original de la capa completa para el buscador,
-        // pero la leyenda usará las capas individuales.
-
-        // Una forma de manejar la búsqueda: crear una FeatureGroup con todas las subcapas
         var allActivityLayers = L.featureGroup(Object.values(categoryLayers));
-        map.addLayer(allActivityLayers); // Asegúrate de que todos los puntos estén en el mapa, aunque sea invisible al inicio
+        map.addLayer(allActivityLayers);
 
         var baseLayers = [
             {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},
@@ -396,10 +402,8 @@
         lay.addTo(map);
         setBounds();
 
-        // --- INICIO DE LA MODIFICACIÓN EN L.Control.Search ---
-        // Ahora el buscador debe operar sobre todasActivityLayers
         var searchControl = new L.Control.Search({
-            layer: allActivityLayers, // Usa la FeatureGroup que contiene todas las subcapas
+            layer: allActivityLayers,
             initial: false,
             hideMarkerOnCollapse: true,
             propertyName: 'Categorias',
@@ -410,9 +414,7 @@
         map.addControl(searchControl);
 
         searchControl.on('search:located', function(e) {
-            // Recorre TODAS las capas en allActivityLayers para resetear y luego aplicar el resaltado
             allActivityLayers.eachLayer(function(layer) {
-                // Asegúrate de que cada capa tenga la función setStyle
                 if (layer.setStyle) {
                     layer.setStyle(getOriginalStyle(layer.feature));
                 }
@@ -473,7 +475,7 @@
 
         map.invalidateSize();
 
-        // --- INICIO DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS (Modificada) ---
+        // --- Inicio del Control de Búsqueda de Coordenadas ---
         var currentCoordMarker;
 
         var CoordsSearchControl = L.Control.extend({
@@ -534,7 +536,59 @@
         });
 
         new CoordsSearchControl().addTo(map);
-        // --- FIN DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS (Modificada) ---
+        // --- Fin del Control de Búsqueda de Coordenadas ---
+
+
+        // --- INICIO DEL NUEVO VISUALIZADOR DE COORDENADAS LAT/LON Y UTM ---
+        var MousePositionControl = L.Control.extend({
+            onAdd: function(map) {
+                this._div = L.DomUtil.create('div', 'leaflet-control-mouse-position');
+                this._update(); // Llama para inicializar el texto
+
+                // Añade un listener para el evento 'mousemove' del mapa
+                map.on('mousemove', this._onMouseMove, this);
+
+                return this._div;
+            },
+
+            onRemove: function(map) {
+                // Limpia el listener cuando el control se remueve
+                map.off('mousemove', this._onMouseMove, this);
+            },
+
+            _onMouseMove: function(e) {
+                this._update(e.latlng);
+            },
+
+            _update: function(latlng) {
+                var latText = '';
+                var lonText = '';
+                var utmText = '';
+
+                if (latlng) {
+                    latText = latlng.lat.toFixed(6); // 6 decimales para precisión
+                    lonText = latlng.lng.toFixed(6); // 6 decimales para precisión
+
+                    // Convierte a UTM Huso 18 Sur
+                    try {
+                        // Latitud negativa para hemisferio sur
+                        var utm = L.utm(latlng.lat, latlng.lng, 18, 'S'); // Lat, Lon, Zona, Hemisferio (N/S)
+                        utmText = `E: ${utm.easting.toFixed(2)} N: ${utm.northing.toFixed(2)} (Huso 18S)`;
+                    } catch (error) {
+                        utmText = 'UTM (Huso 18S): Fuera de rango';
+                    }
+                }
+
+                this._div.innerHTML = `Lat/Lon: ${latText}, ${lonText}<br/>UTM: ${utmText}`;
+            }
+        });
+
+        // Añade el control al mapa en la esquina inferior izquierda
+        var mousePositionControl = new MousePositionControl({
+            position: 'bottomleft' // Ubicación del control
+        });
+        map.addControl(mousePositionControl);
+        // --- FIN DEL NUEVO VISUALIZADOR DE COORDENADAS LAT/LON Y UTM ---
         </script>
     </body>
 </html>
