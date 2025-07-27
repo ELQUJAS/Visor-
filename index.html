@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
         <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
@@ -27,11 +27,15 @@
             border-radius: 5px;
             font-size: 14px;
             color: #333;
+            /* Flexbox para alinear los elementos si prefieres */
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Espacio entre los elementos */
         }
         .leaflet-control-coords input[type="text"] {
-            width: 80px;
+            width: 180px; /* Ancho ajustado para una entrada combinada */
             padding: 4px;
-            margin: 0 4px;
+            margin: 0; /* Ajustado el margen */
             border: 1px solid #ccc;
             border-radius: 3px;
         }
@@ -327,39 +331,55 @@
 
         map.invalidateSize();
 
-        // --- INICIO DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS ---
+        // --- INICIO DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS (Modificada) ---
         var currentCoordMarker; // Variable para mantener la referencia al marcador de coordenadas
 
         var CoordsSearchControl = L.Control.extend({
             onAdd: function(map) {
                 var div = L.DomUtil.create('div', 'leaflet-control-coords');
-                div.innerHTML = 'Lat: <input type="text" id="coordLat" value="-39.247217" /> ' +
-                                'Lon: <input type="text" id="coordLon" value="-72.204498" /> ' +
+                div.innerHTML = 'Coordenadas (Lat Lon): <input type="text" id="coordInput" value="-39.247217 -72.204498" /> ' +
                                 '<button id="goCoords">Ir</button>';
 
                 L.DomEvent.disableClickPropagation(div); // Evita que los clics dentro del control afecten al mapa
 
                 var goButton = div.querySelector('#goCoords');
                 L.DomEvent.on(goButton, 'click', function() {
-                    var lat = parseFloat(div.querySelector('#coordLat').value);
-                    var lon = parseFloat(div.querySelector('#coordLon').value);
+                    var inputString = div.querySelector('#coordInput').value;
+                    // Intenta dividir la cadena por espacios
+                    var parts = inputString.trim().split(/\s+/);
 
-                    if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-                        map.setView([lat, lon], 14); // Centra el mapa en las coordenadas con un zoom de 14
+                    if (parts.length === 2) {
+                        var lat = parseFloat(parts[0]);
+                        var lon = parseFloat(parts[1]);
 
-                        // Elimina el marcador anterior si existe
-                        if (currentCoordMarker) {
-                            map.removeLayer(currentCoordMarker);
+                        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                            map.setView([lat, lon], 14); // Centra el mapa en las coordenadas con un zoom de 14
+
+                            // Elimina el marcador anterior si existe
+                            if (currentCoordMarker) {
+                                map.removeLayer(currentCoordMarker);
+                            }
+
+                            // Añade un nuevo marcador en las coordenadas
+                            currentCoordMarker = L.marker([lat, lon]).addTo(map)
+                                .bindPopup(`**Coordenadas:**<br>Lat: ${lat}<br>Lon: ${lon}`)
+                                .openPopup();
+                        } else {
+                            alert('Por favor, introduce coordenadas numéricas válidas (Lat: -90 a 90, Lon: -180 a 180).');
                         }
-
-                        // Añade un nuevo marcador en las coordenadas
-                        currentCoordMarker = L.marker([lat, lon]).addTo(map)
-                            .bindPopup(`**Coordenadas:**<br>Lat: ${lat}<br>Lon: ${lon}`)
-                            .openPopup();
                     } else {
-                        alert('Por favor, introduce coordenadas válidas (Lat: -90 a 90, Lon: -180 a 180).');
+                        alert('Formato incorrecto. Por favor, introduce las coordenadas como "Latitud Longitud" (ej: -39.247217 -72.204498).');
                     }
                 });
+
+                // Permite buscar al presionar Enter en el campo de texto
+                var coordInput = div.querySelector('#coordInput');
+                L.DomEvent.on(coordInput, 'keydown', function(e) {
+                    if (e.keyCode === 13) { // 13 es el código para la tecla Enter
+                        goButton.click(); // Simula un clic en el botón "Ir"
+                    }
+                });
+
 
                 return div;
             },
@@ -370,7 +390,7 @@
 
         // Añade el control al mapa en la posición deseada (ej. topright)
         new CoordsSearchControl().addTo(map);
-        // --- FIN DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS ---
+        // --- FIN DE LA NUEVA FUNCIONALIDAD DE BÚSQUEDA POR COORDENADAS (Modificada) ---
         </script>
     </body>
 </html>
