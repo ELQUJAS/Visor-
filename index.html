@@ -327,17 +327,17 @@
             initial: false,
             hideMarkerOnCollapse: true,
             propertyName: 'Categorias',
-            zoom: 14,
-            marker: false, // ¡IMPORTANTE! Deshabilita el marcador temporal del plugin
+            zoom: 14, // Este zoom se usará si solo se encuentra un punto, pero fitBounds tiene prioridad
+            marker: false, // Deshabilita el marcador temporal del plugin
         });
 
         map.addControl(searchControl);
 
-        // --- Eventos para manejar el resaltado y selección de múltiples puntos ---
+        // --- Eventos para manejar el resaltado de múltiples puntos y zoom general ---
 
         // Cuando el buscador encuentra una ubicación (categoría)
         searchControl.on('search:located', function(e) {
-            // Primero, resetea todos los estilos y cierra todos los popups
+            // Primero, resetea todos los estilos y cierra todos los popups de la capa de actividades
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 layer.setStyle(getOriginalStyle(layer.feature));
                 if (layer.getPopup() && layer.getPopup().isOpen()) {
@@ -345,10 +345,10 @@
                 }
             });
 
-            var bounds = L.latLngBounds([]); // Para calcular el zoom a todos los puntos encontrados
-            var firstLayerFound = null;
+            var bounds = L.latLngBounds([]); // Inicializa un bounds vacío para todos los puntos encontrados
+            var matchingLayers = []; // Almacena las capas que coinciden
 
-            // Luego, aplica el resaltado y abre el popup para todos los puntos que coinciden
+            // Luego, aplica el resaltado a todos los puntos que coinciden con la categoría buscada
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 if (layer.feature.properties.Categorias === e.text) { // Compara con el texto exacto buscado
                     layer.setStyle({
@@ -365,18 +365,16 @@
                         layer.openPopup(); // Abre el popup del punto
                     }
                     bounds.extend(layer.getLatLng()); // Añade la latlng al bounds
-                    if (!firstLayerFound) {
-                        firstLayerFound = layer; // Guarda el primer punto encontrado para centrar el mapa
-                    }
+                    matchingLayers.push(layer); // Añade la capa al array de coincidencias
                 }
             });
 
-            // Centra el mapa para mostrar todos los puntos encontrados si hay más de uno
-            if (!bounds.isEmpty()) {
+            // Ajusta el mapa para mostrar todos los puntos encontrados
+            if (!bounds.isEmpty() && matchingLayers.length > 0) {
                 map.fitBounds(bounds, { padding: [50, 50] }); // Ajusta el padding si es necesario
-            } else if (firstLayerFound) {
+            } else if (matchingLayers.length === 1) {
                 // Si solo hay un punto, céntralo con el zoom definido en el control
-                map.setView(firstLayerFound.getLatLng(), searchControl.options.zoom);
+                map.setView(matchingLayers[0].getLatLng(), searchControl.options.zoom);
             }
         });
 
