@@ -51,8 +51,6 @@
             background-color: #0056b3;
         }
 
-        /* Removido el estilo .search-found para iconos, ya que no queremos un símbolo */
-
         </style>
         <title></title>
     </head>
@@ -187,12 +185,7 @@
         }
 
         // Función para obtener el estilo original de una característica (punto)
-        // Esta función ya la tenías y es crucial para resetear los estilos
         function getOriginalStyle(feature) {
-            return style_ActividadesGrupo_2_0(feature);
-        }
-
-        function style_ActividadesGrupo_2_0(feature) {
             switch(String(feature.properties['Categorias'])) {
                 case 'Apoyo Iniciativas de Conservación':
                     return {
@@ -332,25 +325,30 @@
         var searchControl = new L.Control.Search({
             layer: layer_ActividadesGrupo_2,
             initial: false,
-            hideMarkerOnCollapse: true, // Esto oculta el marcador por defecto de la búsqueda
+            hideMarkerOnCollapse: true,
             propertyName: 'Categorias',
-            zoom: 14, // Nivel de zoom al encontrar un resultado
+            zoom: 14,
             marker: false, // ¡IMPORTANTE! Deshabilita el marcador temporal del plugin
-            // No necesitamos onEachFeature aquí en el searchControl, lo manejaremos con eventos
         });
 
         map.addControl(searchControl);
 
-        // --- Eventos para manejar el resaltado de múltiples puntos ---
+        // --- Eventos para manejar el resaltado y selección de múltiples puntos ---
 
         // Cuando el buscador encuentra una ubicación (categoría)
         searchControl.on('search:located', function(e) {
-            // Primero, resetea todos los estilos para limpiar búsquedas anteriores
+            // Primero, resetea todos los estilos y cierra todos los popups
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 layer.setStyle(getOriginalStyle(layer.feature));
+                if (layer.getPopup() && layer.getPopup().isOpen()) {
+                    layer.closePopup();
+                }
             });
 
-            // Luego, aplica el resaltado a todos los puntos que coinciden con la categoría buscada
+            var bounds = L.latLngBounds([]); // Para calcular el zoom a todos los puntos encontrados
+            var firstLayerFound = null;
+
+            // Luego, aplica el resaltado y abre el popup para todos los puntos que coinciden
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 if (layer.feature.properties.Categorias === e.text) { // Compara con el texto exacto buscado
                     layer.setStyle({
@@ -363,20 +361,33 @@
                     if (layer.bringToFront) {
                         layer.bringToFront(); // Trae el punto al frente
                     }
+                    if (layer.openPopup) {
+                        layer.openPopup(); // Abre el popup del punto
+                    }
+                    bounds.extend(layer.getLatLng()); // Añade la latlng al bounds
+                    if (!firstLayerFound) {
+                        firstLayerFound = layer; // Guarda el primer punto encontrado para centrar el mapa
+                    }
                 }
             });
 
-            // Opcional: Centra el mapa en el primer resultado encontrado si lo deseas
-            if (e.layer) {
-                map.setView(e.layer.getLatLng(), searchControl.options.zoom);
+            // Centra el mapa para mostrar todos los puntos encontrados si hay más de uno
+            if (!bounds.isEmpty()) {
+                map.fitBounds(bounds, { padding: [50, 50] }); // Ajusta el padding si es necesario
+            } else if (firstLayerFound) {
+                // Si solo hay un punto, céntralo con el zoom definido en el control
+                map.setView(firstLayerFound.getLatLng(), searchControl.options.zoom);
             }
         });
 
         // Cuando el buscador se colapsa o se limpia (incluyendo la "x" de la barra de búsqueda)
         searchControl.on('search:collapsed', function() {
-            // Resetea todos los estilos a su estado original
+            // Resetea todos los estilos a su estado original y cierra todos los popups
             layer_ActividadesGrupo_2.eachLayer(function(layer) {
                 layer.setStyle(getOriginalStyle(layer.feature));
+                if (layer.getPopup() && layer.getPopup().isOpen()) {
+                    layer.closePopup();
+                }
             });
         });
 
