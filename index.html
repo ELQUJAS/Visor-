@@ -537,7 +537,6 @@
             }
         });
 
-        // Asegúrate de añadirlo en la posición deseada si no lo estaba
         new CoordsSearchControl().addTo(map); // Por defecto se añade arriba a la derecha
         // --- Fin del Control de Búsqueda de Coordenadas ---
 
@@ -579,8 +578,8 @@
                         var utm = L.utm(latlng.lat, latlng.lng, 18, 'S');
                         utmText = `E: ${utm.easting.toFixed(2)} N: ${utm.northing.toFixed(2)} (Huso 18S)`;
                     } catch (error) {
-                        console.error("Error al convertir a UTM:", error);
-                        utmText = 'UTM (Huso 18S): Error de conversión';
+                        // console.error("Error al convertir a UTM:", error); // Puedes descomentar para depuración
+                        utmText = 'UTM (Huso 18S): Fuera de rango / Error';
                     }
                 }
 
