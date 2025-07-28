@@ -60,7 +60,7 @@
             font-size: 12px;
             color: #333;
             text-align: left;
-            min-width: 180px; /* Ajustado para solo Lat/Lon */
+            min-width: 180px;
             white-space: nowrap;
             line-height: 1.4;
         }
@@ -74,17 +74,7 @@
             }
         }
 
-        /* Nuevo estilo para el punto azul en la leyenda */
-        .legend-blue-dot {
-            display: inline-block;
-            width: 18px; /* Tamaño del punto */
-            height: 18px; /* Tamaño del punto */
-            background-color: blue; /* Color azul */
-            border-radius: 50%; /* Para hacerlo redondo */
-            vertical-align: middle; /* Alineación vertical con el texto */
-            margin-right: 5px; /* Espacio a la derecha del punto */
-            border: 1px solid #333; /* Borde opcional para mayor visibilidad */
-        }
+        /* El estilo .legend-blue-dot ya no es necesario si usamos una imagen PNG */
         </style>
         <title></title>
     </head>
@@ -190,7 +180,7 @@
             attribution: '',
             minZoom: 1,
             maxZoom: 28,
-            minNativeZoom: 0,
+            minNativeNativeZoom: 0,
             maxNativeNativeZoom: 19
         });
         layer_OpenStreetMap_0;
@@ -203,7 +193,7 @@
             attribution: '',
             minZoom: 1,
             maxZoom: 28,
-            minNativeZoom: 0,
+            minNativeNativeZoom: 0,
             maxNativeNativeZoom: 17
         });
         layer_EsriSatellite_1;
@@ -273,7 +263,7 @@
                 weight: 2.0,
                 fill: true,
                 fillOpacity: 1,
-                fillColor: 'rgba(18,236,252,1.0)',
+                fillColor: 'rgba(18,236,252,1.0)', // ESTE ES EL COLOR CALIPSO/CIAN
                 interactive: true,
             }
                     break;
@@ -399,8 +389,10 @@
                 label: 'Actividades Grupo',
                 children: [
                     {label: 'Apoyo Iniciativas de Conservación<br /><img src="legend/ActividadesGrupo_2_ApoyoIniciativasdeConservación0.png" />', layer: categoryLayers['Apoyo Iniciativas de Conservación']},
-                    // MODIFICACIÓN CLAVE AQUÍ: Usamos un span con estilo para el punto azul
-                    {label: 'Apoyo iniciativas privadas<br /><span class="legend-blue-dot"></span>', layer: categoryLayers['Apoyo iniciativas privadas']},
+                    // ¡MODIFICACIÓN CLAVE AQUÍ! Se ha restaurado el uso de la etiqueta <img>
+                    // Asegúrate de que el archivo 'ActividadesGrupo_2_Apoyoiniciativasprivadas1.png'
+                    // exista en tu carpeta 'legend/' y que su nombre sea EXACTO.
+                    {label: 'Apoyo iniciativas privadas<br /><img src="legend/ActividadesGrupo_2_Apoyoiniciativasprivadas1.png" />', layer: categoryLayers['Apoyo iniciativas privadas']},
                     {label: 'Iniciativas de Educación y difusión<br /><img src="legend/ActividadesGrupo_2_IniciativasdeEducaciónydifusión2.png" />', layer: categoryLayers['Iniciativas de Educación y difusión']},
                     {label: 'Monitoreo o muestreo de la especie<br /><img src="legend/ActividadesGrupo_2_Monitoreoomuestreodelaespecie3.png" />', layer: categoryLayers['Monitoreo o muestreo de la especie']},
                     {label: 'Reducción o mitigación de amenazas<br /><img src="legend/ActividadesGrupo_2_Reducciónomitigacióndeamenazas4.png" />', layer: categoryLayers['Reducción o mitigación de amenazas']},
