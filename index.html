@@ -60,9 +60,9 @@
             font-size: 12px;
             color: #333;
             text-align: left;
-            min-width: 250px; /* Ancho mínimo para que quepan las coordenadas */
-            white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
-            line-height: 1.4; /* Espaciado entre líneas */
+            min-width: 180px; /* Ajustado para solo Lat/Lon */
+            white-space: nowrap;
+            line-height: 1.4;
         }
         /* Ajuste para móviles si es necesario */
         @media (max-width: 768px) {
@@ -91,7 +91,7 @@
         <script src="js/labels.js"></script>
         <script src="js/leaflet.photon.js"></script>
         <script src="js/leaflet-search.js"></script>
-        <script src="js/utm.js"></script> <script src="data/ActividadesGrupo_2.js"></script>
+        <script src="data/ActividadesGrupo_2.js"></script>
         <script>
         var highlightLayer;
 
@@ -375,7 +375,7 @@
         });
 
         var allActivityLayers = L.featureGroup(Object.values(categoryLayers));
-        map.addLayer(allActivityLayers); // Asegúrate de que todos los puntos estén en el mapa, aunque sea invisible al inicio
+        map.addLayer(allActivityLayers);
 
         var baseLayers = [
             {label: "OpenStreetMap", layer: layer_OpenStreetMap_0},
@@ -537,11 +537,11 @@
             }
         });
 
-        new CoordsSearchControl().addTo(map); // Por defecto se añade arriba a la derecha
+        new CoordsSearchControl().addTo(map);
         // --- Fin del Control de Búsqueda de Coordenadas ---
 
 
-        // --- INICIO DEL VISUALIZADOR DE COORDENADAS LAT/LON Y UTM (Inferior Izquierdo) ---
+        // --- INICIO DEL VISUALIZADOR DE COORDENADAS LAT/LON (Inferior Izquierdo) ---
         var MousePositionControl = L.Control.extend({
             onAdd: function(map) {
                 this._div = L.DomUtil.create('div', 'leaflet-control-mouse-position');
@@ -565,34 +565,22 @@
             _update: function(latlng) {
                 var latText = '';
                 var lonText = '';
-                var utmText = '';
 
                 if (latlng) {
                     latText = latlng.lat.toFixed(6); // 6 decimales para precisión
                     lonText = latlng.lng.toFixed(6); // 6 decimales para precisión
-
-                    // Convierte a UTM Huso 18 Sur
-                    try {
-                        // L.utm(lat, lon, zone, hemisphere)
-                        // Para Chile, si estamos en Huso 18 Sur, usamos 18 y 'S'
-                        var utm = L.utm(latlng.lat, latlng.lng, 18, 'S');
-                        utmText = `E: ${utm.easting.toFixed(2)} N: ${utm.northing.toFixed(2)} (Huso 18S)`;
-                    } catch (error) {
-                        // console.error("Error al convertir a UTM:", error); // Puedes descomentar para depuración
-                        utmText = 'UTM (Huso 18S): Fuera de rango / Error';
-                    }
                 }
 
-                this._div.innerHTML = `Lat/Lon: ${latText}, ${lonText}<br/>UTM: ${utmText}`;
+                this._div.innerHTML = `Lat: ${latText}<br/>Lon: ${lonText}`;
             }
         });
 
         // Añade el control al mapa en la esquina inferior izquierda
         var mousePositionControl = new MousePositionControl({
-            position: 'bottomleft' // Ubicación del control
+            position: 'bottomleft'
         });
         map.addControl(mousePositionControl);
-        // --- FIN DEL VISUALIZADOR DE COORDENADAS LAT/LON Y UTM ---
+        // --- FIN DEL VISUALIZADOR DE COORDENADAS LAT/LON ---
         </script>
     </body>
 </html>
